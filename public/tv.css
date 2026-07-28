@@ -25,39 +25,41 @@ html, body {
   color: var(--text-white);
 }
 
-/* Full Screen TV Board - 100% Usage */
-.tv-board-masonry {
+/* Full Screen TV Container - 100% Screen Height & Width Usage */
+.tv-board-grid {
   width: 100vw;
   height: 100vh;
-  padding: 1.2vh 1.4vw;
+  padding: 1.5vh 1.8vw;
+  display: flex;
+  gap: 1.8vw;
 }
 
-/* LANDSCAPE MODE (16:9 / 21:9) */
-@media (min-aspect-ratio: 1/1) {
-  .tv-board-masonry {
-    column-count: var(--cols-landscape, 6);
-    column-gap: 1.6vw;
-    column-fill: auto;
-  }
+/* Equal Columns Flex Container */
+.tv-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding-right: 0.8vw;
+  border-right: 1px solid rgba(158, 201, 86, 0.2);
 }
 
-/* PORTRAIT MODE (9:16 Vertical) */
-@media (max-aspect-ratio: 1/1) {
-  .tv-board-masonry {
-    column-count: var(--cols-portrait, 3);
-    column-gap: 1.6vw;
-    column-fill: auto;
-  }
+.tv-column:last-child {
+  border-right: none;
+  padding-right: 0;
 }
 
-/* Clean Category Block */
-.category-block-clean {
-  break-inside: avoid;
-  page-break-inside: avoid;
-  display: block;
+/* Category Block */
+.category-block-auto {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  margin-bottom: 1.2vh;
-  padding-bottom: 0.2vh;
+  margin-bottom: 1vh;
+}
+
+.category-block-auto:last-child {
+  margin-bottom: 0;
 }
 
 /* Logo Green Underline Header */
@@ -65,24 +67,31 @@ html, body {
   display: flex;
   align-items: center;
   margin-bottom: 0.4vh;
-  padding-bottom: 0.2vh;
+  padding-bottom: 0.25vh;
   border-bottom: 2px solid var(--logo-green);
 }
 
 .cat-title-text {
-  font-size: clamp(0.8rem, 1.05vw, 1.25rem);
+  font-size: clamp(0.85rem, 1.15vw, 1.4rem);
   font-weight: 900;
   color: var(--logo-green);
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.7px;
 }
 
-/* Item Rows */
+/* Items List - Stretched Cleanly */
+.items-list-auto {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.15vh;
+}
+
 .item-row-clean {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 0.18vh 0;
+  padding: 0.2vh 0;
   border-bottom: 1px solid var(--item-divider);
 }
 
@@ -92,7 +101,7 @@ html, body {
 
 .item-name-text {
   font-weight: 700;
-  font-size: clamp(0.72rem, 0.9vw, 1.1rem);
+  font-size: clamp(0.78rem, 0.98vw, 1.2rem);
   color: var(--text-white);
   line-height: 1.15;
   white-space: nowrap;
@@ -103,7 +112,7 @@ html, body {
 
 .item-price-text {
   font-weight: 900;
-  font-size: clamp(0.78rem, 0.98vw, 1.18rem);
+  font-size: clamp(0.82rem, 1.08vw, 1.28rem);
   color: var(--logo-green);
   white-space: nowrap;
 }

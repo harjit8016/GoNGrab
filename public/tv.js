@@ -43,11 +43,39 @@ async function fetchTvMenu() {
   }
 }
 
+function packCategoriesIntoColumns(categoryGroups, numCols = 5) {
+  const categories = Object.keys(categoryGroups);
+  
+  // Calculate weight for each category: 1.8 (header weight) + items count
+  const catWeights = categories.map(name => ({
+    name,
+    items: categoryGroups[name],
+    weight: 1.8 + categoryGroups[name].length
+  }));
+
+  const columns = Array.from({ length: numCols }, () => []);
+  const colWeights = Array(numCols).fill(0);
+
+  // Distribute categories into columns to balance vertical height
+  catWeights.forEach(cat => {
+    let minColIdx = 0;
+    for (let i = 1; i < numCols; i++) {
+      if (colWeights[i] < colWeights[minColIdx]) {
+        minColIdx = i;
+      }
+    }
+    columns[minColIdx].push(cat);
+    colWeights[minColIdx] += cat.weight;
+  });
+
+  return columns;
+}
+
 function renderTvBoard() {
   const board = document.getElementById('tv-board');
   if (!menuData || menuData.length === 0) {
     board.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 2rem; font-weight: 700;">
+      <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--text-muted); font-size: 2rem; font-weight: 700;">
         No items available for this branch.
       </div>
     `;
@@ -64,54 +92,45 @@ function renderTvBoard() {
     categoryGroups[catName].push(item);
   });
 
-  const categories = Object.keys(categoryGroups);
-  const totalCategories = categories.length;
+  const isLandscape = window.innerWidth >= window.innerHeight;
+  const numCols = isLandscape ? 5 : 3;
 
-  // Determine optimal column counts to fit ALL 25 categories
-  let landscapeCols = 6;
-  let portraitCols = 3;
-
-  if (totalCategories <= 4) {
-    landscapeCols = totalCategories;
-    portraitCols = 2;
-  } else if (totalCategories <= 12) {
-    landscapeCols = 4;
-    portraitCols = 2;
-  } else if (totalCategories <= 18) {
-    landscapeCols = 5;
-    portraitCols = 3;
-  } else {
-    landscapeCols = 6;
-    portraitCols = 3;
-  }
-
-  board.style.setProperty('--cols-landscape', landscapeCols);
-  board.style.setProperty('--cols-portrait', portraitCols);
+  // Auto-pack categories into balanced columns
+  const columnsData = packCategoriesIntoColumns(categoryGroups, numCols);
 
   let boardHtml = '';
 
-  categories.forEach(catName => {
-    const items = categoryGroups[catName];
-    items.sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
+  columnsData.forEach(colCats => {
+    let colContentHtml = '';
 
-    let itemsHtml = '';
-    items.forEach(item => {
-      itemsHtml += `
-        <div class="item-row-clean">
-          <span class="item-name-text">${escapeHtml(item.name)}</span>
-          <span class="item-price-text">₹${item.price}</span>
+    colCats.forEach(cat => {
+      cat.items.sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
+
+      let itemsHtml = '';
+      cat.items.forEach(item => {
+        itemsHtml += `
+          <div class="item-row-clean">
+            <span class="item-name-text">${escapeHtml(item.name)}</span>
+            <span class="item-price-text">₹${item.price}</span>
+          </div>
+        `;
+      });
+
+      colContentHtml += `
+        <div class="category-block-auto">
+          <div class="cat-title-row">
+            <span class="cat-title-text">${escapeHtml(cat.name)}</span>
+          </div>
+          <div class="items-list-auto">
+            ${itemsHtml}
+          </div>
         </div>
       `;
     });
 
     boardHtml += `
-      <div class="category-block-clean">
-        <div class="cat-title-row">
-          <span class="cat-title-text">${escapeHtml(catName)}</span>
-        </div>
-        <div class="items-list-clean">
-          ${itemsHtml}
-        </div>
+      <div class="tv-column">
+        ${colContentHtml}
       </div>
     `;
   });
