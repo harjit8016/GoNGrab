@@ -9,17 +9,35 @@ function getQueryParam(param) {
 document.addEventListener('DOMContentLoaded', async () => {
   await fetchTvMenu();
   setInterval(fetchTvMenu, 3000);
+  
+  // Auto-request fullscreen on first click or touch interaction
+  const triggerAutoFs = () => {
+    enterFullscreen();
+    document.removeEventListener('click', triggerAutoFs);
+    document.removeEventListener('touchstart', triggerAutoFs);
+    document.removeEventListener('keydown', triggerAutoFs);
+  };
+
+  document.addEventListener('click', triggerAutoFs);
+  document.addEventListener('touchstart', triggerAutoFs);
+  document.addEventListener('keydown', triggerAutoFs);
 });
 
-// Fullscreen API Handlers
-function toggleFullscreen() {
+// Fullscreen Helper Functions
+function enterFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
     const docEl = document.documentElement;
     if (docEl.requestFullscreen) {
-      docEl.requestFullscreen().catch(err => console.warn('Fullscreen error:', err));
+      docEl.requestFullscreen().catch(err => console.warn('Fullscreen prompt info:', err));
     } else if (docEl.webkitRequestFullscreen) {
       docEl.webkitRequestFullscreen();
     }
+  }
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    enterFullscreen();
   } else {
     if (document.exitFullscreen) {
       document.exitFullscreen();
@@ -29,24 +47,7 @@ function toggleFullscreen() {
   }
 }
 
-document.addEventListener('fullscreenchange', handleFullscreenChange);
-document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-
-function handleFullscreenChange() {
-  const expandIcon = document.getElementById('fs-icon-expand');
-  const compressIcon = document.getElementById('fs-icon-compress');
-  const isFs = document.fullscreenElement || document.webkitFullscreenElement;
-
-  if (isFs) {
-    if (expandIcon) expandIcon.style.display = 'none';
-    if (compressIcon) compressIcon.style.display = 'inline-block';
-  } else {
-    if (expandIcon) expandIcon.style.display = 'inline-block';
-    if (compressIcon) compressIcon.style.display = 'none';
-  }
-}
-
-// Double-click anywhere to toggle fullscreen
+// Double-click anywhere on the page toggles fullscreen
 document.addEventListener('dblclick', toggleFullscreen);
 
 // Keyboard shortcut 'F' or 'F11'
