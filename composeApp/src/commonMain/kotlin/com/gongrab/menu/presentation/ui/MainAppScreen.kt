@@ -254,13 +254,19 @@ fun BranchDialog(
 }
 
 // =========================================================================
-// 2. CATEGORIES MANAGEMENT VIEW
+// 2. CATEGORIES MANAGEMENT VIEW (WITH SEARCH FILTER)
 // =========================================================================
 @Composable
 fun CategoriesView(categories: List<Category>, repository: MenuRepository) {
     var showDialog by remember { mutableStateOf(false) }
     var editingCategory by remember { mutableStateOf<Category?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+
+    val filteredCategories = remember(categories, searchQuery) {
+        if (searchQuery.isBlank()) categories
+        else categories.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -277,10 +283,28 @@ fun CategoriesView(categories: List<Category>, repository: MenuRepository) {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Category Search Bar
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search Categories (e.g. Shake, Burger, Mojito...)", color = TextMuted) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Text("✕", color = LeafGreen, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(categories) { category ->
+            items(filteredCategories) { category ->
                 Card(
                     colors = CardDefaults.cardColors(containerColor = CardNavySurface),
                     modifier = Modifier.fillMaxWidth().border(1.dp, BorderGreen, RoundedCornerShape(8.dp))
@@ -385,7 +409,7 @@ fun CategoryDialog(
 }
 
 // =========================================================================
-// 3. MENU ITEMS VIEW (EXPANDED FULL-SCREEN SPLIT EDITOR)
+// 3. MENU ITEMS VIEW (WITH ITEM SEARCH & SEARCHABLE CATEGORY SELECTOR)
 // =========================================================================
 @Composable
 fun ItemsView(
@@ -396,7 +420,16 @@ fun ItemsView(
 ) {
     var showEditor by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<MenuItem?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+
+    val filteredItems = remember(items, searchQuery) {
+        if (searchQuery.isBlank()) items
+        else items.filter { 
+            it.name.contains(searchQuery, ignoreCase = true) || 
+            it.categoryName.contains(searchQuery, ignoreCase = true)
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -404,7 +437,7 @@ fun ItemsView(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Menu Catalog Items", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Menu Catalog Items (${filteredItems.size} shown)", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Button(
                 onClick = { editingItem = null; showEditor = true },
                 colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color.Black)
@@ -413,10 +446,28 @@ fun ItemsView(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Item Search Bar
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            placeholder = { Text("Search Items by Name or Category (e.g. Burger, Frappe, Pasta...)", color = TextMuted) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Text("✕", color = LeafGreen, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(items) { item ->
+            items(filteredItems) { item ->
                 Card(
                     colors = CardDefaults.cardColors(containerColor = CardNavySurface),
                     modifier = Modifier.fillMaxWidth().border(1.dp, BorderGreen, RoundedCornerShape(8.dp))
@@ -469,7 +520,7 @@ fun ItemsView(
     }
 }
 
-// FULL-SCREEN / EXTENDED SPLIT EDITOR FOR UNLIMITED BRANCHES
+// FULL-SCREEN ITEM EDITOR WITH SEARCHABLE CATEGORY SELECTOR
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FullScreenMenuItemEditor(
@@ -484,6 +535,14 @@ fun FullScreenMenuItemEditor(
     var selectedCategoryId by remember { mutableStateOf(item?.categoryId ?: (categories.firstOrNull()?.id ?: "")) }
     var defaultPriceText by remember { mutableStateOf(item?.defaultPrice?.toString() ?: "149") }
     var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    // Category search query inside editor
+    var categorySearchQuery by remember { mutableStateOf("") }
+
+    val filteredCategories = remember(categories, categorySearchQuery) {
+        if (categorySearchQuery.isBlank()) categories
+        else categories.filter { it.name.contains(categorySearchQuery, ignoreCase = true) }
+    }
 
     val selectedBranchesMap = remember {
         mutableStateMapOf<String, Boolean>().apply {
@@ -620,7 +679,6 @@ fun FullScreenMenuItemEditor(
                                     color = LeafGreen
                                 )
 
-                                // Batch selection controls
                                 Row {
                                     TextButton(onClick = {
                                         branches.forEach { selectedBranchesMap[it.id] = true }
@@ -642,7 +700,6 @@ fun FullScreenMenuItemEditor(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // Scrollable list for unlimited branches (1 to 20+)
                             LazyColumn(
                                 modifier = Modifier.weight(1f).fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -682,7 +739,6 @@ fun FullScreenMenuItemEditor(
 
                                             if (isSelected) {
                                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                                    // Availability Switch
                                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                                         Text("Status: ", fontSize = 11.sp, color = TextMuted)
                                                         Switch(
@@ -692,7 +748,6 @@ fun FullScreenMenuItemEditor(
                                                         )
                                                     }
 
-                                                    // Price Overrides
                                                     OutlinedTextField(
                                                         value = branchPricesMap[branch.id] ?: defaultPriceText,
                                                         onValueChange = { branchPricesMap[branch.id] = it },
@@ -713,7 +768,7 @@ fun FullScreenMenuItemEditor(
                     }
 
                     // =====================================================
-                    // RIGHT COLUMN (40% WIDTH): CORE ITEM PROPERTIES
+                    // RIGHT COLUMN (40% WIDTH): CORE PROPERTIES & SEARCHABLE CATEGORY SELECTOR
                     // =====================================================
                     Card(
                         colors = CardDefaults.cardColors(containerColor = CardNavySurface),
@@ -743,48 +798,69 @@ fun FullScreenMenuItemEditor(
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                            // Category Selection Dropdown
-                            Text("Category Selection:", color = LeafGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            var categoryExpanded by remember { mutableStateOf(false) }
-                            val currentCategory = categories.find { it.id == selectedCategoryId }
+                            // SEARCHABLE CATEGORY SELECTOR
+                            Text("Search & Select Category:", color = LeafGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(6.dp))
 
-                            ExposedDropdownMenuBox(
-                                expanded = categoryExpanded,
-                                onExpandedChange = { categoryExpanded = !categoryExpanded }
+                            OutlinedTextField(
+                                value = categorySearchQuery,
+                                onValueChange = { categorySearchQuery = it },
+                                placeholder = { Text("Type to search categories...", color = TextMuted) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            val selectedCat = categories.find { it.id == selectedCategoryId }
+                            Text("Selected: ${selectedCat?.name ?: "None"}", color = LeafGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            // Scrollable list of filtered categories inside editor
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = DarkNavyBg),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(160.dp)
+                                    .border(1.dp, BorderGreen.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                    .padding(8.dp)
                             ) {
-                                OutlinedTextField(
-                                    value = currentCategory?.name ?: "Select Category",
-                                    onValueChange = {},
-                                    readOnly = true,
-                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
-                                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                                )
-                                ExposedDropdownMenu(
-                                    expanded = categoryExpanded,
-                                    onDismissRequest = { categoryExpanded = false }
-                                ) {
-                                    categories.forEach { cat ->
-                                        DropdownMenuItem(
-                                            text = { Text(cat.name) },
-                                            onClick = {
-                                                selectedCategoryId = cat.id
-                                                categoryExpanded = false
+                                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                                    items(filteredCategories) { cat ->
+                                        val isChosen = cat.id == selectedCategoryId
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { selectedCategoryId = cat.id; errorMsg = null }
+                                                .background(
+                                                    if (isChosen) LeafGreen.copy(alpha = 0.2f) else Color.Transparent,
+                                                    shape = RoundedCornerShape(4.dp)
+                                                )
+                                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = cat.name,
+                                                color = if (isChosen) LeafGreen else Color.White,
+                                                fontWeight = if (isChosen) FontWeight.Bold else FontWeight.Normal,
+                                                fontSize = 13.sp
+                                            )
+                                            if (isChosen) {
+                                                Text("✓ Selected", color = LeafGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                             }
-                                        )
+                                        }
                                     }
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
 
                             OutlinedTextField(
                                 value = defaultPriceText,
-                                onValueChange = { 
-                                    defaultPriceText = it
-                                },
+                                onValueChange = { defaultPriceText = it },
                                 label = { Text("Default Base Price (₹)") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 singleLine = true,
@@ -802,7 +878,7 @@ fun FullScreenMenuItemEditor(
                                     Text("Live Item Summary", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = LeafGreen)
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(name.ifEmpty { "[Item Name]" }, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
-                                    Text("Category: ${currentCategory?.name ?: "None"}", fontSize = 12.sp, color = TextMuted)
+                                    Text("Category: ${selectedCat?.name ?: "None"}", fontSize = 12.sp, color = TextMuted)
                                     Text("Base Price: ₹${defaultPriceText.ifEmpty { "0" }}", fontSize = 12.sp, color = LeafGreen)
 
                                     val activeCount = selectedBranchesMap.values.count { it }
