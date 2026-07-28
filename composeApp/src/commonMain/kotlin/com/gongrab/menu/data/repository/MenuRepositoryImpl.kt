@@ -24,8 +24,26 @@ class MenuRepositoryImpl(
         encodeDefaults = true
     }
 
-    private val dataCacheFile = File(rootPath, "data_cache.json")
-    private val dataJsonFile = File(rootPath, "data.json")
+    private fun findValidDataFile(): File? {
+        val currentDir = File(rootPath)
+        val candidateFiles = mutableListOf<File>()
+
+        // Add candidate paths in order of preference
+        candidateFiles.add(File(currentDir, "data_cache.json"))
+        candidateFiles.add(File(currentDir, "data.json"))
+        
+        currentDir.parentFile?.let { parent ->
+            candidateFiles.add(File(parent, "data_cache.json"))
+            candidateFiles.add(File(parent, "data.json"))
+        }
+
+        // Return first existing file with content > 100 bytes
+        return candidateFiles.firstOrNull { it.exists() && it.length() > 100 }
+    }
+
+    private val activeDataFile: File by lazy {
+        findValidDataFile() ?: File(rootPath, "data_cache.json")
+    }
 
     private val _branches = MutableStateFlow<List<Branch>>(emptyList())
     override val branches: StateFlow<List<Branch>> = _branches.asStateFlow()
@@ -46,20 +64,17 @@ class MenuRepositoryImpl(
 
     override suspend fun reloadData() {
         try {
-            val targetFile = if (dataCacheFile.exists()) dataCacheFile else if (dataJsonFile.exists()) dataJsonFile else null
-            if (targetFile != null && targetFile.length() > 0) {
+            val targetFile = findValidDataFile()
+            if (targetFile != null) {
                 val content = targetFile.readText()
                 val cache = json.decodeFromString<MenuDataCache>(content)
                 _branches.value = cache.branches.ifEmpty { defaultBranches() }
                 _categories.value = cache.categories
                 _items.value = cache.items
+                println("✓ Loaded ${cache.categories.size} categories and ${cache.items.size} items from ${targetFile.absolutePath}")
             } else {
-                // Initialize default seeds if missing
-                val defaultB = defaultBranches()
-                _branches.value = defaultB
-                _categories.value = emptyList()
-                _items.value = emptyList()
-                saveToDisk()
+                println("No data file found, using defaults.")
+                _branches.value = defaultBranches()
             }
         } catch (e: Exception) {
             println("Error loading menu data: ${e.message}")
@@ -82,8 +97,14 @@ class MenuRepositoryImpl(
                 items = _items.value
             )
             val jsonText = json.encodeToString(MenuDataCache.serializer(), cache)
-            dataCacheFile.writeText(jsonText)
-            dataJsonFile.writeText(jsonText)
+            val targetFile = activeDataFile
+            targetFile.writeText(jsonText)
+            
+            // Also sync to root data_cache.json if targetFile is different
+            val rootCache = File(rootPath, "data_cache.json")
+            if (rootCache.absolutePath != targetFile.absolutePath) {
+                rootCache.writeText(jsonText)
+            }
         } catch (e: Exception) {
             println("Error saving menu data: ${e.message}")
         }
@@ -101,7 +122,6 @@ class MenuRepositoryImpl(
 
     override suspend fun deleteBranch(branchId: String) {
         _branches.value = _branches.value.filter { it.id != branchId }
-        // Clean references in items
         _items.value = _items.value.map { item ->
             item.copy(branches = item.branches.filterKeys { it != branchId })
         }
@@ -115,7 +135,6 @@ class MenuRepositoryImpl(
 
     override suspend fun updateCategory(category: Category) {
         _categories.value = _categories.value.map { if (it.id == category.id) category else it }
-        // Update categoryName in items if updated
         _items.value = _items.value.map { item ->
             if (item.categoryId == category.id) item.copy(categoryName = category.name) else item
         }
@@ -124,7 +143,6 @@ class MenuRepositoryImpl(
 
     override suspend fun deleteCategory(categoryId: String) {
         _categories.value = _categories.value.filter { it.id != categoryId }
-        // Delete items under this category
         _items.value = _items.value.filter { it.categoryId != categoryId }
         saveToDisk()
     }

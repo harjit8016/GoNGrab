@@ -1,16 +1,2438 @@
 {
-    "categories": [],
-    "branches": [
-        {
-            "id": "branch_1",
-            "name": "Branch 1",
-            "address": "Main Street"
+  "branches": [
+    {
+      "id": "branch_1",
+      "name": "Branch 1",
+      "code": "BR1",
+      "isActive": true
+    },
+    {
+      "id": "branch_2",
+      "name": "Branch 2",
+      "code": "BR2",
+      "isActive": true
+    }
+  ],
+  "categories": [
+    {
+      "id": "shake",
+      "name": "Shake",
+      "displayOrder": 1,
+      "isActive": true
+    },
+    {
+      "id": "mojito",
+      "name": "Mojito",
+      "displayOrder": 2,
+      "isActive": true
+    },
+    {
+      "id": "smoothies",
+      "name": "Smoothies",
+      "displayOrder": 3,
+      "isActive": true
+    },
+    {
+      "id": "ice_tea",
+      "name": "Ice Tea",
+      "displayOrder": 4,
+      "isActive": true
+    },
+    {
+      "id": "pasta",
+      "name": "Pasta",
+      "displayOrder": 5,
+      "isActive": true
+    },
+    {
+      "id": "maggie",
+      "name": "Maggie",
+      "displayOrder": 6,
+      "isActive": true
+    },
+    {
+      "id": "dessert",
+      "name": "Dessert",
+      "displayOrder": 7,
+      "isActive": true
+    },
+    {
+      "id": "sandwich",
+      "name": "Sandwich",
+      "displayOrder": 8,
+      "isActive": true
+    },
+    {
+      "id": "sub_sandwich",
+      "name": "Sub Sandwich",
+      "displayOrder": 9,
+      "isActive": true
+    },
+    {
+      "id": "garlic_bread",
+      "name": "Garlic Bread",
+      "displayOrder": 10,
+      "isActive": true
+    },
+    {
+      "id": "taco",
+      "name": "Taco",
+      "displayOrder": 11,
+      "isActive": true
+    },
+    {
+      "id": "hot_dog",
+      "name": "Hot Dog",
+      "displayOrder": 12,
+      "isActive": true
+    },
+    {
+      "id": "coffee",
+      "name": "Coffee",
+      "displayOrder": 13,
+      "isActive": true
+    },
+    {
+      "id": "cold_coffee",
+      "name": "Cold Coffee",
+      "displayOrder": 14,
+      "isActive": true
+    },
+    {
+      "id": "non-veg_snacks",
+      "name": "Non-Veg Snacks",
+      "displayOrder": 15,
+      "isActive": true
+    },
+    {
+      "id": "pastry",
+      "name": "Pastry",
+      "displayOrder": 16,
+      "isActive": true
+    },
+    {
+      "id": "go_n_grab_special",
+      "name": "Go N Grab Special",
+      "displayOrder": 17,
+      "isActive": true
+    },
+    {
+      "id": "burgers",
+      "name": "Burgers",
+      "displayOrder": 18,
+      "isActive": true
+    },
+    {
+      "id": "fries",
+      "name": "Fries",
+      "displayOrder": 19,
+      "isActive": true
+    },
+    {
+      "id": "momos",
+      "name": "Momos",
+      "displayOrder": 20,
+      "isActive": true
+    },
+    {
+      "id": "spring_roll",
+      "name": "Spring Roll",
+      "displayOrder": 21,
+      "isActive": true
+    },
+    {
+      "id": "waffle",
+      "name": "Waffle",
+      "displayOrder": 22,
+      "isActive": true
+    },
+    {
+      "id": "pizza",
+      "name": "Pizza",
+      "displayOrder": 23,
+      "isActive": true
+    },
+    {
+      "id": "wrap",
+      "name": "Wrap",
+      "displayOrder": 24,
+      "isActive": true
+    },
+    {
+      "id": "add-ons",
+      "name": "Add-ons",
+      "displayOrder": 25,
+      "isActive": true
+    }
+  ],
+  "items": [
+    {
+      "id": "shake_strawberry_shake",
+      "itemId": "shake_strawberry_shake",
+      "name": "Strawberry Shake",
+      "categoryId": "shake",
+      "categoryName": "Shake",
+      "defaultPrice": 219,
+      "displayOrder": 1,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
         },
-        {
-            "id": "branch_2",
-            "name": "Branch 2",
-            "address": "Downtown Center"
+        "branch_2": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
         }
-    ],
-    "items": []
+      }
+    },
+    {
+      "id": "shake_butterscotch_shake",
+      "itemId": "shake_butterscotch_shake",
+      "name": "Butterscotch Shake",
+      "categoryId": "shake",
+      "categoryName": "Shake",
+      "defaultPrice": 219,
+      "displayOrder": 2,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "shake_chocolate_shake",
+      "itemId": "shake_chocolate_shake",
+      "name": "Chocolate Shake",
+      "categoryId": "shake",
+      "categoryName": "Shake",
+      "defaultPrice": 219,
+      "displayOrder": 3,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "shake_oreo_shake",
+      "itemId": "shake_oreo_shake",
+      "name": "Oreo Shake",
+      "categoryId": "shake",
+      "categoryName": "Shake",
+      "defaultPrice": 229,
+      "displayOrder": 4,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 229,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 229,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "shake_vanilla_shake",
+      "itemId": "shake_vanilla_shake",
+      "name": "Vanilla Shake",
+      "categoryId": "shake",
+      "categoryName": "Shake",
+      "defaultPrice": 219,
+      "displayOrder": 5,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "shake_kit_kat_shake",
+      "itemId": "shake_kit_kat_shake",
+      "name": "Kit Kat Shake",
+      "categoryId": "shake",
+      "categoryName": "Shake",
+      "defaultPrice": 229,
+      "displayOrder": 6,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 229,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 229,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "shake_mango_shake",
+      "itemId": "shake_mango_shake",
+      "name": "Mango Shake",
+      "categoryId": "shake",
+      "categoryName": "Shake",
+      "defaultPrice": 219,
+      "displayOrder": 7,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "shake_chocolate_hazelnut_shake",
+      "itemId": "shake_chocolate_hazelnut_shake",
+      "name": "Chocolate Hazelnut Shake",
+      "categoryId": "shake",
+      "categoryName": "Shake",
+      "defaultPrice": 229,
+      "displayOrder": 8,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 229,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 229,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "mojito_mint_mojito",
+      "itemId": "mojito_mint_mojito",
+      "name": "Mint Mojito",
+      "categoryId": "mojito",
+      "categoryName": "Mojito",
+      "defaultPrice": 159,
+      "displayOrder": 9,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "mojito_green_mojito",
+      "itemId": "mojito_green_mojito",
+      "name": "Green Mojito",
+      "categoryId": "mojito",
+      "categoryName": "Mojito",
+      "defaultPrice": 159,
+      "displayOrder": 10,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "mojito_virgin_mojito",
+      "itemId": "mojito_virgin_mojito",
+      "name": "Virgin Mojito",
+      "categoryId": "mojito",
+      "categoryName": "Mojito",
+      "defaultPrice": 159,
+      "displayOrder": 11,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "mojito_watermelon_mojito",
+      "itemId": "mojito_watermelon_mojito",
+      "name": "Watermelon Mojito",
+      "categoryId": "mojito",
+      "categoryName": "Mojito",
+      "defaultPrice": 159,
+      "displayOrder": 12,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "smoothies_mango_smoothie",
+      "itemId": "smoothies_mango_smoothie",
+      "name": "Mango Smoothie",
+      "categoryId": "smoothies",
+      "categoryName": "Smoothies",
+      "defaultPrice": 250,
+      "displayOrder": 13,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 250,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 250,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "smoothies_avocado_smoothie",
+      "itemId": "smoothies_avocado_smoothie",
+      "name": "Avocado Smoothie",
+      "categoryId": "smoothies",
+      "categoryName": "Smoothies",
+      "defaultPrice": 270,
+      "displayOrder": 14,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 270,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 270,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "ice_tea_lemon_ice_tea",
+      "itemId": "ice_tea_lemon_ice_tea",
+      "name": "Lemon Ice Tea",
+      "categoryId": "ice_tea",
+      "categoryName": "Ice Tea",
+      "defaultPrice": 189,
+      "displayOrder": 15,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "ice_tea_peach_ice_tea",
+      "itemId": "ice_tea_peach_ice_tea",
+      "name": "Peach Ice Tea",
+      "categoryId": "ice_tea",
+      "categoryName": "Ice Tea",
+      "defaultPrice": 189,
+      "displayOrder": 16,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pasta_white_sauce_pasta",
+      "itemId": "pasta_white_sauce_pasta",
+      "name": "White Sauce Pasta",
+      "categoryId": "pasta",
+      "categoryName": "Pasta",
+      "defaultPrice": 189,
+      "displayOrder": 17,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pasta_red_sauce_pasta",
+      "itemId": "pasta_red_sauce_pasta",
+      "name": "Red Sauce Pasta",
+      "categoryId": "pasta",
+      "categoryName": "Pasta",
+      "defaultPrice": 199,
+      "displayOrder": 18,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pasta_mix_sauce_pasta",
+      "itemId": "pasta_mix_sauce_pasta",
+      "name": "Mix Sauce Pasta",
+      "categoryId": "pasta",
+      "categoryName": "Pasta",
+      "defaultPrice": 219,
+      "displayOrder": 19,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pasta_tandoori_sauce_pasta",
+      "itemId": "pasta_tandoori_sauce_pasta",
+      "name": "Tandoori Sauce Pasta",
+      "categoryId": "pasta",
+      "categoryName": "Pasta",
+      "defaultPrice": 269,
+      "displayOrder": 20,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 269,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 269,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pasta_chicken_sauce_pasta",
+      "itemId": "pasta_chicken_sauce_pasta",
+      "name": "Chicken Sauce Pasta",
+      "categoryId": "pasta",
+      "categoryName": "Pasta",
+      "defaultPrice": 289,
+      "displayOrder": 21,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 289,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 289,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "maggie_veggie_maggie",
+      "itemId": "maggie_veggie_maggie",
+      "name": "Veggie Maggie",
+      "categoryId": "maggie",
+      "categoryName": "Maggie",
+      "defaultPrice": 110,
+      "displayOrder": 22,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 110,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 110,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "maggie_tandoori_maggie",
+      "itemId": "maggie_tandoori_maggie",
+      "name": "Tandoori Maggie",
+      "categoryId": "maggie",
+      "categoryName": "Maggie",
+      "defaultPrice": 150,
+      "displayOrder": 23,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 150,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 150,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "maggie_cheese_maggie",
+      "itemId": "maggie_cheese_maggie",
+      "name": "Cheese Maggie",
+      "categoryId": "maggie",
+      "categoryName": "Maggie",
+      "defaultPrice": 140,
+      "displayOrder": 24,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 140,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 140,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "maggie_chicken_maggie",
+      "itemId": "maggie_chicken_maggie",
+      "name": "Chicken Maggie",
+      "categoryId": "maggie",
+      "categoryName": "Maggie",
+      "defaultPrice": 190,
+      "displayOrder": 25,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 190,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 190,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "dessert_dark_passion",
+      "itemId": "dessert_dark_passion",
+      "name": "Dark Passion",
+      "categoryId": "dessert",
+      "categoryName": "Dessert",
+      "defaultPrice": 199,
+      "displayOrder": 26,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "dessert_plain_brownie",
+      "itemId": "dessert_plain_brownie",
+      "name": "Plain Brownie",
+      "categoryId": "dessert",
+      "categoryName": "Dessert",
+      "defaultPrice": 119,
+      "displayOrder": 27,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 119,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 119,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "dessert_vanilla_ice_cream",
+      "itemId": "dessert_vanilla_ice_cream",
+      "name": "Vanilla Ice Cream",
+      "categoryId": "dessert",
+      "categoryName": "Dessert",
+      "defaultPrice": 80,
+      "displayOrder": 28,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 80,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 80,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "dessert_gulab_jamun",
+      "itemId": "dessert_gulab_jamun",
+      "name": "Gulab Jamun",
+      "categoryId": "dessert",
+      "categoryName": "Dessert",
+      "defaultPrice": 60,
+      "displayOrder": 29,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 60,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 60,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "dessert_choco_lava",
+      "itemId": "dessert_choco_lava",
+      "name": "Choco Lava",
+      "categoryId": "dessert",
+      "categoryName": "Dessert",
+      "defaultPrice": 90,
+      "displayOrder": 30,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 90,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 90,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "sandwich_veg_sandwich_cold",
+      "itemId": "sandwich_veg_sandwich_cold",
+      "name": "Veg Sandwich (Cold)",
+      "categoryId": "sandwich",
+      "categoryName": "Sandwich",
+      "defaultPrice": 129,
+      "displayOrder": 31,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 129,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 129,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "sandwich_desi_grill_sandwich",
+      "itemId": "sandwich_desi_grill_sandwich",
+      "name": "Desi Grill Sandwich",
+      "categoryId": "sandwich",
+      "categoryName": "Sandwich",
+      "defaultPrice": 199,
+      "displayOrder": 32,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "sandwich_paneer_tikka_sandwich",
+      "itemId": "sandwich_paneer_tikka_sandwich",
+      "name": "Paneer Tikka Sandwich",
+      "categoryId": "sandwich",
+      "categoryName": "Sandwich",
+      "defaultPrice": 179,
+      "displayOrder": 33,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 179,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 179,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "sandwich_cheese_sandwich",
+      "itemId": "sandwich_cheese_sandwich",
+      "name": "Cheese Sandwich",
+      "categoryId": "sandwich",
+      "categoryName": "Sandwich",
+      "defaultPrice": 199,
+      "displayOrder": 34,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "sandwich_chicken_tikka_sandwich",
+      "itemId": "sandwich_chicken_tikka_sandwich",
+      "name": "Chicken Tikka Sandwich",
+      "categoryId": "sandwich",
+      "categoryName": "Sandwich",
+      "defaultPrice": 219,
+      "displayOrder": 35,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "sub_sandwich_veg_sandwich_sub",
+      "itemId": "sub_sandwich_veg_sandwich_sub",
+      "name": "Veg Sandwich Sub",
+      "categoryId": "sub_sandwich",
+      "categoryName": "Sub Sandwich",
+      "defaultPrice": 199,
+      "displayOrder": 36,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "sub_sandwich_aalloo_tikki_sub",
+      "itemId": "sub_sandwich_aalloo_tikki_sub",
+      "name": "Aalloo Tikki Sub",
+      "categoryId": "sub_sandwich",
+      "categoryName": "Sub Sandwich",
+      "defaultPrice": 209,
+      "displayOrder": 37,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 209,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 209,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "sub_sandwich_paneer_sub",
+      "itemId": "sub_sandwich_paneer_sub",
+      "name": "Paneer Sub",
+      "categoryId": "sub_sandwich",
+      "categoryName": "Sub Sandwich",
+      "defaultPrice": 204,
+      "displayOrder": 38,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 204,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 204,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "sub_sandwich_chicken_sub",
+      "itemId": "sub_sandwich_chicken_sub",
+      "name": "Chicken Sub",
+      "categoryId": "sub_sandwich",
+      "categoryName": "Sub Sandwich",
+      "defaultPrice": 239,
+      "displayOrder": 39,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 239,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 239,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "garlic_bread_veg_garlic_bread",
+      "itemId": "garlic_bread_veg_garlic_bread",
+      "name": "Veg Garlic Bread",
+      "categoryId": "garlic_bread",
+      "categoryName": "Garlic Bread",
+      "defaultPrice": 154,
+      "displayOrder": 40,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 154,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 154,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "garlic_bread_plain_garlic_bread",
+      "itemId": "garlic_bread_plain_garlic_bread",
+      "name": "Plain Garlic Bread",
+      "categoryId": "garlic_bread",
+      "categoryName": "Garlic Bread",
+      "defaultPrice": 149,
+      "displayOrder": 41,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "garlic_bread_cheese_garlic_bread",
+      "itemId": "garlic_bread_cheese_garlic_bread",
+      "name": "Cheese Garlic Bread",
+      "categoryId": "garlic_bread",
+      "categoryName": "Garlic Bread",
+      "defaultPrice": 109,
+      "displayOrder": 42,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 109,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 109,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "taco_veg_taco",
+      "itemId": "taco_veg_taco",
+      "name": "Veg Taco",
+      "categoryId": "taco",
+      "categoryName": "Taco",
+      "defaultPrice": 149,
+      "displayOrder": 43,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "taco_paneer_taco",
+      "itemId": "taco_paneer_taco",
+      "name": "Paneer Taco",
+      "categoryId": "taco",
+      "categoryName": "Taco",
+      "defaultPrice": 154,
+      "displayOrder": 44,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 154,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 154,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "taco_tandoori_taco",
+      "itemId": "taco_tandoori_taco",
+      "name": "Tandoori Taco",
+      "categoryId": "taco",
+      "categoryName": "Taco",
+      "defaultPrice": 154,
+      "displayOrder": 45,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 154,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 154,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "taco_chicken_taco",
+      "itemId": "taco_chicken_taco",
+      "name": "Chicken Taco",
+      "categoryId": "taco",
+      "categoryName": "Taco",
+      "defaultPrice": 199,
+      "displayOrder": 46,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "hot_dog_paneer_hot_dog",
+      "itemId": "hot_dog_paneer_hot_dog",
+      "name": "Paneer Hot Dog",
+      "categoryId": "hot_dog",
+      "categoryName": "Hot Dog",
+      "defaultPrice": 159,
+      "displayOrder": 47,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "hot_dog_chicken_hot_dog",
+      "itemId": "hot_dog_chicken_hot_dog",
+      "name": "Chicken Hot Dog",
+      "categoryId": "hot_dog",
+      "categoryName": "Hot Dog",
+      "defaultPrice": 179,
+      "displayOrder": 48,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 179,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 179,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "coffee_cappuccino",
+      "itemId": "coffee_cappuccino",
+      "name": "Cappuccino",
+      "categoryId": "coffee",
+      "categoryName": "Coffee",
+      "defaultPrice": 129,
+      "displayOrder": 49,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 129,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 129,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "coffee_cafe_latte",
+      "itemId": "coffee_cafe_latte",
+      "name": "Cafe Latte",
+      "categoryId": "coffee",
+      "categoryName": "Coffee",
+      "defaultPrice": 129,
+      "displayOrder": 50,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 129,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 129,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "coffee_americano",
+      "itemId": "coffee_americano",
+      "name": "Americano",
+      "categoryId": "coffee",
+      "categoryName": "Coffee",
+      "defaultPrice": 119,
+      "displayOrder": 51,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 119,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 119,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "coffee_espresso",
+      "itemId": "coffee_espresso",
+      "name": "Espresso",
+      "categoryId": "coffee",
+      "categoryName": "Coffee",
+      "defaultPrice": 90,
+      "displayOrder": 52,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 90,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 90,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "coffee_hazelnut_cappuccino",
+      "itemId": "coffee_hazelnut_cappuccino",
+      "name": "Hazelnut Cappuccino",
+      "categoryId": "coffee",
+      "categoryName": "Coffee",
+      "defaultPrice": 149,
+      "displayOrder": 53,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "coffee_irish_cappuccino",
+      "itemId": "coffee_irish_cappuccino",
+      "name": "Irish Cappuccino",
+      "categoryId": "coffee",
+      "categoryName": "Coffee",
+      "defaultPrice": 149,
+      "displayOrder": 54,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "cold_coffee_cafe_frappe",
+      "itemId": "cold_coffee_cafe_frappe",
+      "name": "Cafe Frappe",
+      "categoryId": "cold_coffee",
+      "categoryName": "Cold Coffee",
+      "defaultPrice": 179,
+      "displayOrder": 55,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 179,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 179,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "cold_coffee_hazelnut_frappe",
+      "itemId": "cold_coffee_hazelnut_frappe",
+      "name": "Hazelnut Frappe",
+      "categoryId": "cold_coffee",
+      "categoryName": "Cold Coffee",
+      "defaultPrice": 219,
+      "displayOrder": 56,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "cold_coffee_irish_frappe",
+      "itemId": "cold_coffee_irish_frappe",
+      "name": "Irish Frappe",
+      "categoryId": "cold_coffee",
+      "categoryName": "Cold Coffee",
+      "defaultPrice": 219,
+      "displayOrder": 57,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "cold_coffee_blast_frappe",
+      "itemId": "cold_coffee_blast_frappe",
+      "name": "Blast Frappe",
+      "categoryId": "cold_coffee",
+      "categoryName": "Cold Coffee",
+      "defaultPrice": 219,
+      "displayOrder": 58,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 219,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "cold_coffee_iced_americano",
+      "itemId": "cold_coffee_iced_americano",
+      "name": "Iced Americano",
+      "categoryId": "cold_coffee",
+      "categoryName": "Cold Coffee",
+      "defaultPrice": 109,
+      "displayOrder": 59,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 109,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 109,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "non-veg_snacks_chicken_wings",
+      "itemId": "non-veg_snacks_chicken_wings",
+      "name": "Chicken Wings",
+      "categoryId": "non-veg_snacks",
+      "categoryName": "Non-Veg Snacks",
+      "defaultPrice": 129,
+      "displayOrder": 60,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 129,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 129,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "non-veg_snacks_chicken_nuggets",
+      "itemId": "non-veg_snacks_chicken_nuggets",
+      "name": "Chicken Nuggets",
+      "categoryId": "non-veg_snacks",
+      "categoryName": "Non-Veg Snacks",
+      "defaultPrice": 199,
+      "displayOrder": 61,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "non-veg_snacks_chicken_popcorn",
+      "itemId": "non-veg_snacks_chicken_popcorn",
+      "name": "Chicken Popcorn",
+      "categoryId": "non-veg_snacks",
+      "categoryName": "Non-Veg Snacks",
+      "defaultPrice": 199,
+      "displayOrder": 62,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "non-veg_snacks_chicken_kfc_style",
+      "itemId": "non-veg_snacks_chicken_kfc_style",
+      "name": "Chicken KFC Style",
+      "categoryId": "non-veg_snacks",
+      "categoryName": "Non-Veg Snacks",
+      "defaultPrice": 229,
+      "displayOrder": 63,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 229,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 229,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pastry_mud_cake_pastry",
+      "itemId": "pastry_mud_cake_pastry",
+      "name": "Mud Cake Pastry",
+      "categoryId": "pastry",
+      "categoryName": "Pastry",
+      "defaultPrice": 140,
+      "displayOrder": 64,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 140,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 140,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pastry_truffle_cake_pastry",
+      "itemId": "pastry_truffle_cake_pastry",
+      "name": "Truffle Cake Pastry",
+      "categoryId": "pastry",
+      "categoryName": "Pastry",
+      "defaultPrice": 140,
+      "displayOrder": 65,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 140,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 140,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pastry_walnut_cake_pastry",
+      "itemId": "pastry_walnut_cake_pastry",
+      "name": "Walnut Cake Pastry",
+      "categoryId": "pastry",
+      "categoryName": "Pastry",
+      "defaultPrice": 170,
+      "displayOrder": 66,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 170,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 170,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "go_n_grab_special_tandoori_pizza",
+      "itemId": "go_n_grab_special_tandoori_pizza",
+      "name": "Tandoori Pizza",
+      "categoryId": "go_n_grab_special",
+      "categoryName": "Go N Grab Special",
+      "defaultPrice": 249,
+      "displayOrder": 67,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 249,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 249,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "go_n_grab_special_paneer_wrap",
+      "itemId": "go_n_grab_special_paneer_wrap",
+      "name": "Paneer Wrap",
+      "categoryId": "go_n_grab_special",
+      "categoryName": "Go N Grab Special",
+      "defaultPrice": 189,
+      "displayOrder": 68,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "burgers_aalloo_tikki_burger",
+      "itemId": "burgers_aalloo_tikki_burger",
+      "name": "Aalloo Tikki Burger",
+      "categoryId": "burgers",
+      "categoryName": "Burgers",
+      "defaultPrice": 80,
+      "displayOrder": 69,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 80,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 80,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "burgers_paneer_burger",
+      "itemId": "burgers_paneer_burger",
+      "name": "Paneer Burger",
+      "categoryId": "burgers",
+      "categoryName": "Burgers",
+      "defaultPrice": 174,
+      "displayOrder": 70,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 174,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 174,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "burgers_tandoori_burger",
+      "itemId": "burgers_tandoori_burger",
+      "name": "Tandoori Burger",
+      "categoryId": "burgers",
+      "categoryName": "Burgers",
+      "defaultPrice": 149,
+      "displayOrder": 71,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "burgers_loaded_burger",
+      "itemId": "burgers_loaded_burger",
+      "name": "Loaded Burger",
+      "categoryId": "burgers",
+      "categoryName": "Burgers",
+      "defaultPrice": 199,
+      "displayOrder": 72,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "burgers_chicken_burger",
+      "itemId": "burgers_chicken_burger",
+      "name": "Chicken Burger",
+      "categoryId": "burgers",
+      "categoryName": "Burgers",
+      "defaultPrice": 210,
+      "displayOrder": 73,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 210,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 210,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "fries_classic_fries",
+      "itemId": "fries_classic_fries",
+      "name": "Classic Fries",
+      "categoryId": "fries",
+      "categoryName": "Fries",
+      "defaultPrice": 99,
+      "displayOrder": 74,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 99,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 99,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "fries_cheese_fries",
+      "itemId": "fries_cheese_fries",
+      "name": "Cheese Fries",
+      "categoryId": "fries",
+      "categoryName": "Fries",
+      "defaultPrice": 139,
+      "displayOrder": 75,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 139,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 139,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "fries_peri_peri_fries",
+      "itemId": "fries_peri_peri_fries",
+      "name": "Peri Peri Fries",
+      "categoryId": "fries",
+      "categoryName": "Fries",
+      "defaultPrice": 139,
+      "displayOrder": 76,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 139,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 139,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "fries_masala_fries",
+      "itemId": "fries_masala_fries",
+      "name": "Masala Fries",
+      "categoryId": "fries",
+      "categoryName": "Fries",
+      "defaultPrice": 129,
+      "displayOrder": 77,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 129,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 129,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "fries_tandoori_fries",
+      "itemId": "fries_tandoori_fries",
+      "name": "Tandoori Fries",
+      "categoryId": "fries",
+      "categoryName": "Fries",
+      "defaultPrice": 139,
+      "displayOrder": 78,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 139,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 139,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "momos_veg_momos_10_pcs",
+      "itemId": "momos_veg_momos_10_pcs",
+      "name": "Veg Momos (10 pcs)",
+      "categoryId": "momos",
+      "categoryName": "Momos",
+      "defaultPrice": 159,
+      "displayOrder": 79,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "momos_veg_momos_20_pcs",
+      "itemId": "momos_veg_momos_20_pcs",
+      "name": "Veg Momos (20 pcs)",
+      "categoryId": "momos",
+      "categoryName": "Momos",
+      "defaultPrice": 319,
+      "displayOrder": 80,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 319,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 319,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "momos_paneer_momos_10_pcs",
+      "itemId": "momos_paneer_momos_10_pcs",
+      "name": "Paneer Momos (10 pcs)",
+      "categoryId": "momos",
+      "categoryName": "Momos",
+      "defaultPrice": 179,
+      "displayOrder": 81,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 179,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 179,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "momos_paneer_momos_20_pcs",
+      "itemId": "momos_paneer_momos_20_pcs",
+      "name": "Paneer Momos (20 pcs)",
+      "categoryId": "momos",
+      "categoryName": "Momos",
+      "defaultPrice": 359,
+      "displayOrder": 82,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 359,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 359,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "momos_chicken_momos_10_pcs",
+      "itemId": "momos_chicken_momos_10_pcs",
+      "name": "Chicken Momos (10 pcs)",
+      "categoryId": "momos",
+      "categoryName": "Momos",
+      "defaultPrice": 199,
+      "displayOrder": 83,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "momos_chicken_momos_20_pcs",
+      "itemId": "momos_chicken_momos_20_pcs",
+      "name": "Chicken Momos (20 pcs)",
+      "categoryId": "momos",
+      "categoryName": "Momos",
+      "defaultPrice": 399,
+      "displayOrder": 84,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 399,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 399,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "momos_fried_momos_add-on",
+      "itemId": "momos_fried_momos_add-on",
+      "name": "Fried Momos (Add-on)",
+      "categoryId": "momos",
+      "categoryName": "Momos",
+      "defaultPrice": 20,
+      "displayOrder": 85,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 20,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 20,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "spring_roll_spring_roll",
+      "itemId": "spring_roll_spring_roll",
+      "name": "Spring Roll",
+      "categoryId": "spring_roll",
+      "categoryName": "Spring Roll",
+      "defaultPrice": 149,
+      "displayOrder": 86,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "waffle_belgian_waffle",
+      "itemId": "waffle_belgian_waffle",
+      "name": "Belgian Waffle",
+      "categoryId": "waffle",
+      "categoryName": "Waffle",
+      "defaultPrice": 0,
+      "displayOrder": 87,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 0,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 0,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "waffle_milk_chocolate_waffle",
+      "itemId": "waffle_milk_chocolate_waffle",
+      "name": "Milk Chocolate Waffle",
+      "categoryId": "waffle",
+      "categoryName": "Waffle",
+      "defaultPrice": 149,
+      "displayOrder": 88,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "waffle_dark_chocolate_waffle",
+      "itemId": "waffle_dark_chocolate_waffle",
+      "name": "Dark Chocolate Waffle",
+      "categoryId": "waffle",
+      "categoryName": "Waffle",
+      "defaultPrice": 159,
+      "displayOrder": 89,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 159,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "waffle_nutella_waffle",
+      "itemId": "waffle_nutella_waffle",
+      "name": "Nutella Waffle",
+      "categoryId": "waffle",
+      "categoryName": "Waffle",
+      "defaultPrice": 189,
+      "displayOrder": 90,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "waffle_kit_kat_waffle",
+      "itemId": "waffle_kit_kat_waffle",
+      "name": "Kit Kat Waffle",
+      "categoryId": "waffle",
+      "categoryName": "Waffle",
+      "defaultPrice": 189,
+      "displayOrder": 91,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "waffle_strawberry_cream_cheese_waffle",
+      "itemId": "waffle_strawberry_cream_cheese_waffle",
+      "name": "Strawberry Cream Cheese Waffle",
+      "categoryId": "waffle",
+      "categoryName": "Waffle",
+      "defaultPrice": 199,
+      "displayOrder": 92,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "waffle_red_velvet_waffle",
+      "itemId": "waffle_red_velvet_waffle",
+      "name": "Red Velvet Waffle",
+      "categoryId": "waffle",
+      "categoryName": "Waffle",
+      "defaultPrice": 189,
+      "displayOrder": 93,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 189,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "waffle_lotus_biscoff_waffle",
+      "itemId": "waffle_lotus_biscoff_waffle",
+      "name": "Lotus Biscoff Waffle",
+      "categoryId": "waffle",
+      "categoryName": "Waffle",
+      "defaultPrice": 249,
+      "displayOrder": 94,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 249,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 249,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "waffle_add_on_ice_cream",
+      "itemId": "waffle_add_on_ice_cream",
+      "name": "Add on: Ice Cream",
+      "categoryId": "waffle",
+      "categoryName": "Waffle",
+      "defaultPrice": 60,
+      "displayOrder": 95,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 60,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 60,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pizza_onion_pizza",
+      "itemId": "pizza_onion_pizza",
+      "name": "Onion Pizza",
+      "categoryId": "pizza",
+      "categoryName": "Pizza",
+      "defaultPrice": 89,
+      "displayOrder": 96,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 89,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 89,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pizza_corn_pizza",
+      "itemId": "pizza_corn_pizza",
+      "name": "Corn Pizza",
+      "categoryId": "pizza",
+      "categoryName": "Pizza",
+      "defaultPrice": 99,
+      "displayOrder": 97,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 99,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 99,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pizza_capsicum_pizza",
+      "itemId": "pizza_capsicum_pizza",
+      "name": "Capsicum Pizza",
+      "categoryId": "pizza",
+      "categoryName": "Pizza",
+      "defaultPrice": 99,
+      "displayOrder": 98,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 99,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 99,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pizza_margherita_pizza",
+      "itemId": "pizza_margherita_pizza",
+      "name": "Margherita Pizza",
+      "categoryId": "pizza",
+      "categoryName": "Pizza",
+      "defaultPrice": 199,
+      "displayOrder": 99,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pizza_loaded_pizza",
+      "itemId": "pizza_loaded_pizza",
+      "name": "Loaded Pizza",
+      "categoryId": "pizza",
+      "categoryName": "Pizza",
+      "defaultPrice": 249,
+      "displayOrder": 100,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 249,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 249,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "pizza_chicken_pizza",
+      "itemId": "pizza_chicken_pizza",
+      "name": "Chicken Pizza",
+      "categoryId": "pizza",
+      "categoryName": "Pizza",
+      "defaultPrice": 249,
+      "displayOrder": 101,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 249,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 249,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "wrap_aalloo_tikki_wrap",
+      "itemId": "wrap_aalloo_tikki_wrap",
+      "name": "Aalloo Tikki Wrap",
+      "categoryId": "wrap",
+      "categoryName": "Wrap",
+      "defaultPrice": 149,
+      "displayOrder": 102,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 149,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "wrap_tandoori_wrap",
+      "itemId": "wrap_tandoori_wrap",
+      "name": "Tandoori Wrap",
+      "categoryId": "wrap",
+      "categoryName": "Wrap",
+      "defaultPrice": 179,
+      "displayOrder": 103,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 179,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 179,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "wrap_loaded_wrap",
+      "itemId": "wrap_loaded_wrap",
+      "name": "Loaded Wrap",
+      "categoryId": "wrap",
+      "categoryName": "Wrap",
+      "defaultPrice": 199,
+      "displayOrder": 104,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 199,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "wrap_chicken_wrap",
+      "itemId": "wrap_chicken_wrap",
+      "name": "Chicken Wrap",
+      "categoryId": "wrap",
+      "categoryName": "Wrap",
+      "defaultPrice": 209,
+      "displayOrder": 105,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 209,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 209,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "add-ons_ice_cream",
+      "itemId": "add-ons_ice_cream",
+      "name": "Ice cream",
+      "categoryId": "add-ons",
+      "categoryName": "Add-ons",
+      "defaultPrice": 39,
+      "displayOrder": 106,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 39,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 39,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "add-ons_cheese_slice",
+      "itemId": "add-ons_cheese_slice",
+      "name": "Cheese slice",
+      "categoryId": "add-ons",
+      "categoryName": "Add-ons",
+      "defaultPrice": 39,
+      "displayOrder": 107,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 39,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 39,
+          "isAvailable": true
+        }
+      }
+    },
+    {
+      "id": "add-ons_add_on_dip",
+      "itemId": "add-ons_add_on_dip",
+      "name": "Add on dip",
+      "categoryId": "add-ons",
+      "categoryName": "Add-ons",
+      "defaultPrice": 29,
+      "displayOrder": 108,
+      "branches": {
+        "branch_1": {
+          "available": true,
+          "price": 29,
+          "isAvailable": true
+        },
+        "branch_2": {
+          "available": true,
+          "price": 29,
+          "isAvailable": true
+        }
+      }
+    }
+  ]
 }
