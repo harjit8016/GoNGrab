@@ -1,0 +1,16 @@
+{
+    "categories": [],
+    "branches": [
+        {
+            "id": "branch_1",
+            "name": "Branch 1",
+            "address": "Main Street"
+        },
+        {
+            "id": "branch_2",
+            "name": "Branch 2",
+            "address": "Downtown Center"
+        }
+    ],
+    "items": []
+}
