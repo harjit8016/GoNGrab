@@ -8,8 +8,52 @@ function getQueryParam(param) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await fetchTvMenu();
-  // Poll live every 3 seconds
   setInterval(fetchTvMenu, 3000);
+});
+
+// Fullscreen API Handlers
+function toggleFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    const docEl = document.documentElement;
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen().catch(err => console.warn('Fullscreen error:', err));
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  }
+}
+
+document.addEventListener('fullscreenchange', handleFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+function handleFullscreenChange() {
+  const expandIcon = document.getElementById('fs-icon-expand');
+  const compressIcon = document.getElementById('fs-icon-compress');
+  const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+
+  if (isFs) {
+    if (expandIcon) expandIcon.style.display = 'none';
+    if (compressIcon) compressIcon.style.display = 'inline-block';
+  } else {
+    if (expandIcon) expandIcon.style.display = 'inline-block';
+    if (compressIcon) compressIcon.style.display = 'none';
+  }
+}
+
+// Double-click anywhere to toggle fullscreen
+document.addEventListener('dblclick', toggleFullscreen);
+
+// Keyboard shortcut 'F' or 'F11'
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'f' || e.key === 'F') {
+    toggleFullscreen();
+  }
 });
 
 async function fetchTvMenu() {
@@ -20,7 +64,6 @@ async function fetchTvMenu() {
                      window.location.hostname === '';
 
     if (isStatic) {
-      // Static Mode (GitHub Pages)
       const res = await fetch('./data.json');
       const cache = await res.json();
       
@@ -37,12 +80,10 @@ async function fetchTvMenu() {
         };
       }).filter(i => i.isAvailable);
     } else {
-      // Server Mode (Localhost Express)
       const res = await fetch(`/api/branches/${currentBranchId}/menu?availableOnly=true`);
       rawData = await res.json();
     }
 
-    // Strict Item Deduplication by item name
     const seenNames = new Set();
     const cleanData = [];
     
@@ -105,7 +146,6 @@ function renderTvBoard() {
     return;
   }
 
-  // Group items by Category
   const categoryGroups = {};
   menuData.forEach(item => {
     const catName = item.categoryName || 'General';
