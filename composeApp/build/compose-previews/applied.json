@@ -1,0 +1,8 @@
+{
+    "schema": "compose-preview-applied/v1",
+    "pluginVersion": "0.18.3",
+    "modulePath": ":composeApp",
+    "moduleName": "composeApp",
+    "variant": "debug",
+    "enabled": true
+}
