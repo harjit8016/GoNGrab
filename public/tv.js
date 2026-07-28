@@ -67,8 +67,8 @@ function renderTvBoard() {
   const categories = Object.keys(categoryGroups);
   const totalCategories = categories.length;
 
-  // Determine optimal column counts
-  let landscapeCols = 5;
+  // Determine optimal column counts to fit ALL 25 categories
+  let landscapeCols = 6;
   let portraitCols = 3;
 
   if (totalCategories <= 4) {
@@ -81,7 +81,7 @@ function renderTvBoard() {
     landscapeCols = 5;
     portraitCols = 3;
   } else {
-    landscapeCols = 5;
+    landscapeCols = 6;
     portraitCols = 3;
   }
 

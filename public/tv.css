@@ -25,18 +25,18 @@ html, body {
   color: var(--text-white);
 }
 
-/* Full Screen TV Container - 0 Header, 100% Usage */
+/* Full Screen TV Board - 100% Usage */
 .tv-board-masonry {
   width: 100vw;
   height: 100vh;
-  padding: 1.8vh 2vw;
+  padding: 1.2vh 1.4vw;
 }
 
 /* LANDSCAPE MODE (16:9 / 21:9) */
 @media (min-aspect-ratio: 1/1) {
   .tv-board-masonry {
-    column-count: var(--cols-landscape, 5);
-    column-gap: 2.2vw;
+    column-count: var(--cols-landscape, 6);
+    column-gap: 1.6vw;
     column-fill: auto;
   }
 }
@@ -45,36 +45,36 @@ html, body {
 @media (max-aspect-ratio: 1/1) {
   .tv-board-masonry {
     column-count: var(--cols-portrait, 3);
-    column-gap: 2vw;
+    column-gap: 1.6vw;
     column-fill: auto;
   }
 }
 
-/* Clean Category Block (Break Avoidance) */
+/* Clean Category Block */
 .category-block-clean {
   break-inside: avoid;
   page-break-inside: avoid;
   display: block;
   width: 100%;
-  margin-bottom: 2vh;
-  padding-bottom: 0.6vh;
+  margin-bottom: 1.2vh;
+  padding-bottom: 0.2vh;
 }
 
 /* Logo Green Underline Header */
 .cat-title-row {
   display: flex;
   align-items: center;
-  margin-bottom: 0.8vh;
-  padding-bottom: 0.3vh;
+  margin-bottom: 0.4vh;
+  padding-bottom: 0.2vh;
   border-bottom: 2px solid var(--logo-green);
 }
 
 .cat-title-text {
-  font-size: clamp(0.9rem, 1.25vw, 1.45rem);
+  font-size: clamp(0.8rem, 1.05vw, 1.25rem);
   font-weight: 900;
   color: var(--logo-green);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
 }
 
 /* Item Rows */
@@ -82,7 +82,7 @@ html, body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 0.35vh 0;
+  padding: 0.18vh 0;
   border-bottom: 1px solid var(--item-divider);
 }
 
@@ -92,18 +92,18 @@ html, body {
 
 .item-name-text {
   font-weight: 700;
-  font-size: clamp(0.8rem, 1.05vw, 1.25rem);
+  font-size: clamp(0.72rem, 0.9vw, 1.1rem);
   color: var(--text-white);
-  line-height: 1.2;
+  line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding-right: 0.8vw;
+  padding-right: 0.6vw;
 }
 
 .item-price-text {
   font-weight: 900;
-  font-size: clamp(0.85rem, 1.15vw, 1.35rem);
+  font-size: clamp(0.78rem, 0.98vw, 1.18rem);
   color: var(--logo-green);
   white-space: nowrap;
 }
