@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --logo-green: #9ec956;
+  --bg-dark: #0a1017;
+  --text-white: #ffffff;
+  --text-muted: #94a3b8;
+  --line-divider: rgba(158, 201, 86, 0.3);
+  --item-divider: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Outfit', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--bg-dark);
+  color: var(--text-white);
+}
+
+/* Full Screen TV Container - 100% Screen Height & Width Usage */
+.tv-board-grid {
+  width: 100vw;
+  height: 100vh;
+  padding: 1.5vh 1.8vw;
+  display: flex;
+  gap: 1.8vw;
+}
+
+/* Equal Columns Flex Container */
+.tv-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding-right: 0.8vw;
+  border-right: 1px solid rgba(158, 201, 86, 0.2);
+}
+
+.tv-column:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+/* Category Block */
+.category-block-auto {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 1vh;
+}
+
+.category-block-auto:last-child {
+  margin-bottom: 0;
+}
+
+/* Logo Green Underline Header */
+.cat-title-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.4vh;
+  padding-bottom: 0.25vh;
+  border-bottom: 2px solid var(--logo-green);
+}
+
+.cat-title-text {
+  font-size: clamp(0.85rem, 1.15vw, 1.4rem);
+  font-weight: 900;
+  color: var(--logo-green);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+/* Items List - Stretched Cleanly */
+.items-list-auto {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.15vh;
+}
+
+.item-row-clean {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.2vh 0;
+  border-bottom: 1px solid var(--item-divider);
+}
+
+.item-row-clean:last-child {
+  border-bottom: none;
+}
+
+.item-name-text {
+  font-weight: 700;
+  font-size: clamp(0.78rem, 0.98vw, 1.2rem);
+  color: var(--text-white);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 0.6vw;
+}
+
+.item-price-text {
+  font-weight: 900;
+  font-size: clamp(0.82rem, 1.08vw, 1.28rem);
+  color: var(--logo-green);
+  white-space: nowrap;
+}

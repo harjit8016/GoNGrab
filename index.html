@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grab N Go - Restaurant Menu Admin</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-utensils"></i>
+        </div>
+        <div>
+          <h1>Grab N Go Menu Manager</h1>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Firebase Multi-Branch Menu Control</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" onclick="openAddBranchModal()">
+          <i class="fa-solid fa-store"></i> Add Branch
+        </button>
+        <button class="btn btn-primary" onclick="openAddItemModal()">
+          <i class="fa-solid fa-plus"></i> Add New Item
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Row -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Total Catalog Items</div>
+        <div class="value" id="stat-total-items">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Categories</div>
+        <div class="value" id="stat-total-categories">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Active Branches</div>
+        <div class="value" id="stat-total-branches">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Active Items (Current View)</div>
+        <div class="value" id="stat-active-view-items" style="color: var(--accent-green);">0</div>
+      </div>
+    </div>
+
+    <!-- Controls Bar -->
+    <div class="controls-bar">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="search-input" placeholder="Search menu items..." oninput="filterItems()">
+      </div>
+
+      <div class="branch-tabs" id="branch-tabs-container">
+        <!-- Branch Tabs populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Categories Pills -->
+    <div class="categories-scroll" id="categories-container">
+      <!-- Category pills populated dynamically -->
+    </div>
+
+    <!-- Menu Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr id="table-header-row">
+            <th>Item Name</th>
+            <th>Category</th>
+            <th>Default Price</th>
+            <!-- Branch Price & Status columns populated dynamically -->
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="menu-items-tbody">
+          <!-- Rows inserted dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add / Edit Item Modal -->
+  <div class="modal-overlay" id="item-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Add New Item</h2>
+        <button class="close-btn" onclick="closeItemModal()">&times;</button>
+      </div>
+      <form id="item-form" onsubmit="saveItem(event)">
+        <input type="hidden" id="edit-item-id">
+        
+        <div class="form-group">
+          <label>Item Name</label>
+          <input type="text" id="form-item-name" class="form-control" placeholder="e.g. Chocolate Hazelnut Shake" required>
+        </div>
+
+        <div class="form-group">
+          <label>Category</label>
+          <select id="form-item-category" class="form-control" required></select>
+        </div>
+
+        <div class="form-group">
+          <label>Default Base Price (₹)</label>
+          <input type="number" step="0.01" id="form-item-price" class="form-control" placeholder="229" required>
+        </div>
+
+        <div class="form-group">
+          <label>Branch Pricing & Availability</label>
+          <div class="branch-config-list" id="modal-branch-configs">
+            <!-- Branch config toggles dynamically generated -->
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeItemModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Branch Modal -->
+  <div class="modal-overlay" id="branch-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Add New Restaurant Branch</h2>
+        <button class="close-btn" onclick="closeBranchModal()">&times;</button>
+      </div>
+      <form id="branch-form" onsubmit="saveBranch(event)">
+        <div class="form-group">
+          <label>Branch Name</label>
+          <input type="text" id="form-branch-name" class="form-control" placeholder="e.g. Branch 3 or Downtown Express" required>
+        </div>
+        <div class="form-group">
+          <label>Branch Code (Optional)</label>
+          <input type="text" id="form-branch-code" class="form-control" placeholder="e.g. BR3">
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeBranchModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Branch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
