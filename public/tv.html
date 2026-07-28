@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>TV Menu Board - Go N Grab 24 Seven</title>
   <link rel="stylesheet" href="tv.css">
+  <!-- Firebase Web SDK Compat for Live DB Sync -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
   <main class="tv-board-grid" id="tv-board">
-    <!-- Auto-balanced 5-column grid generated dynamically -->
+    <!-- Auto-balanced 5-column grid generated dynamically from Live DB -->
   </main>
 
   <script src="tv.js"></script>
