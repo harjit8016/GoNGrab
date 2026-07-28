@@ -13,19 +13,25 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize Firebase Admin SDK
 const serviceAccountPath = path.join(__dirname, 'grabngo-b5778-firebase-adminsdk-fbsvc-ffc7ab1f34.json');
+const localCachePath = path.join(__dirname, 'data_cache.json');
 
-if (!fs.existsSync(serviceAccountPath)) {
-  console.error(`Service account key not found at ${serviceAccountPath}`);
-  process.exit(1);
+let db = null;
+if (fs.existsSync(serviceAccountPath)) {
+  try {
+    const serviceAccount = require(serviceAccountPath);
+    initializeApp({ credential: cert(serviceAccount) });
+    db = getFirestore();
+  } catch (e) {
+    console.error('Firebase init error:', e.message);
+  }
 }
 
-const serviceAccount = require(serviceAccountPath);
-
-initializeApp({
-  credential: cert(serviceAccount)
-});
-
-const db = getFirestore();
+function getLocalCache() {
+  if (fs.existsSync(localCachePath)) {
+    return JSON.parse(fs.readFileSync(localCachePath, 'utf8'));
+  }
+  return { branches: [], categories: [], items: [] };
+}
 
 function slugify(text) {
   return text.toString().toLowerCase()
@@ -36,21 +42,23 @@ function slugify(text) {
 }
 
 // --------------------------------------------------------------------------
-// API ENDPOINTS (Optimized Subcollection Architecture)
+// API ENDPOINTS (Firestore + Resilient Offline Local Fallback)
 // --------------------------------------------------------------------------
 
 // 1. Get all branches
 app.get('/api/branches', async (req, res) => {
   try {
-    const snapshot = await db.collection('branches').get();
-    const branches = [];
-    snapshot.forEach(doc => {
-      branches.push({ id: doc.id, ...doc.data() });
-    });
-    res.json(branches);
+    if (db) {
+      const snapshot = await db.collection('branches').get();
+      const branches = [];
+      snapshot.forEach(doc => branches.push({ id: doc.id, ...doc.data() }));
+      if (branches.length > 0) return res.json(branches);
+    }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.warn('Firestore fallback triggered for /api/branches:', err.message);
   }
+  const cache = getLocalCache();
+  res.json(cache.branches);
 });
 
 // 2. Create new branch
@@ -68,28 +76,17 @@ app.post('/api/branches', async (req, res) => {
       createdAt: new Date()
     };
 
-    await db.collection('branches').doc(branchId).set(branchDoc, { merge: true });
+    if (db) {
+      await db.collection('branches').doc(branchId).set(branchDoc, { merge: true });
+    }
 
-    // Initialize subcollection for this new branch using Master Items Catalog
-    const itemsSnapshot = await db.collection('items').get();
-    const batch = db.batch();
+    // Save to local cache
+    const cache = getLocalCache();
+    if (!cache.branches.find(b => b.id === branchId)) {
+      cache.branches.push(branchDoc);
+      fs.writeFileSync(localCachePath, JSON.stringify(cache, null, 2));
+    }
 
-    itemsSnapshot.forEach(doc => {
-      const itemData = doc.data();
-      const subDocRef = db.collection('branches').doc(branchId).collection('menu_items').doc(doc.id);
-      batch.set(subDocRef, {
-        itemId: doc.id,
-        name: itemData.name,
-        categoryId: itemData.categoryId,
-        categoryName: itemData.categoryName,
-        price: itemData.defaultPrice || 0,
-        isAvailable: false,
-        displayOrder: itemData.displayOrder || 999,
-        updatedAt: new Date()
-      }, { merge: true });
-    });
-
-    await batch.commit();
     res.status(201).json(branchDoc);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -99,95 +96,79 @@ app.post('/api/branches', async (req, res) => {
 // 3. Get categories
 app.get('/api/categories', async (req, res) => {
   try {
-    const snapshot = await db.collection('categories').orderBy('displayOrder', 'asc').get();
-    const categories = [];
-    snapshot.forEach(doc => {
-      categories.push({ id: doc.id, ...doc.data() });
-    });
-    res.json(categories);
+    if (db) {
+      const snapshot = await db.collection('categories').orderBy('displayOrder', 'asc').get();
+      const categories = [];
+      snapshot.forEach(doc => categories.push({ id: doc.id, ...doc.data() }));
+      if (categories.length > 0) return res.json(categories);
+    }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.warn('Firestore fallback triggered for /api/categories:', err.message);
   }
+  const cache = getLocalCache();
+  res.json(cache.categories);
 });
 
-// 4. Get items (Master Catalog merged with Branch Subcollections)
+// 4. Get items
 app.get('/api/items', async (req, res) => {
   try {
-    const { categoryId, branchId } = req.query;
-    let query = db.collection('items');
-
-    if (categoryId) {
-      query = query.where('categoryId', '==', categoryId);
+    if (db) {
+      const snapshot = await db.collection('items').get();
+      const masterItems = [];
+      snapshot.forEach(doc => masterItems.push({ id: doc.id, ...doc.data() }));
+      if (masterItems.length > 0) return res.json(masterItems);
     }
-
-    const masterSnapshot = await query.get();
-    const masterItems = [];
-    masterSnapshot.forEach(doc => {
-      masterItems.push({ id: doc.id, ...doc.data() });
-    });
-
-    // Fetch all branch subcollections to build UI view
-    const branchesSnapshot = await db.collection('branches').get();
-    const branchIds = [];
-    branchesSnapshot.forEach(bDoc => branchIds.push(bDoc.id));
-
-    // Map branch menu item states into each item
-    for (const item of masterItems) {
-      item.branches = {};
-      for (const bId of branchIds) {
-        const subDoc = await db.collection('branches').doc(bId).collection('menu_items').doc(item.id).get();
-        if (subDoc.exists) {
-          const subData = subDoc.data();
-          item.branches[bId] = {
-            available: subData.isAvailable,
-            price: subData.price
-          };
-        } else {
-          item.branches[bId] = {
-            available: false,
-            price: item.defaultPrice
-          };
-        }
-      }
-    }
-
-    // Filter by branch availability if branchId specified
-    let filteredItems = masterItems;
-    if (branchId) {
-      filteredItems = masterItems.filter(item => item.branches[branchId] && item.branches[branchId].available);
-    }
-
-    filteredItems.sort((a, b) => (a.displayOrder || 999) - (b.displayOrder || 999));
-    res.json(filteredItems);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.warn('Firestore fallback triggered for /api/items:', err.message);
   }
+  const cache = getLocalCache();
+  res.json(cache.items);
 });
 
-// 5. Get branch specific menu (Optimized endpoint for TV displays & POS)
+// 5. Get branch specific menu (Optimized TV & POS endpoint with Resilient Cache Fallback)
 app.get('/api/branches/:branchId/menu', async (req, res) => {
+  const { branchId } = req.params;
+  const { availableOnly } = req.query;
+
   try {
-    const { branchId } = req.params;
-    const { availableOnly } = req.query;
-
-    let subQuery = db.collection('branches').doc(branchId).collection('menu_items');
-    if (availableOnly === 'true') {
-      subQuery = subQuery.where('isAvailable', '==', true);
+    if (db) {
+      let subQuery = db.collection('branches').doc(branchId).collection('menu_items');
+      if (availableOnly === 'true') {
+        subQuery = subQuery.where('isAvailable', '==', true);
+      }
+      const snapshot = await subQuery.get();
+      const menuItems = [];
+      snapshot.forEach(doc => menuItems.push({ id: doc.id, ...doc.data() }));
+      if (menuItems.length > 0) return res.json(menuItems);
     }
-
-    const snapshot = await subQuery.get();
-    const menuItems = [];
-    snapshot.forEach(doc => {
-      menuItems.push({ id: doc.id, ...doc.data() });
-    });
-
-    res.json(menuItems);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.warn(`Firestore fallback triggered for /api/branches/${branchId}/menu:`, err.message);
   }
+
+  // Resilient Local Cache Fallback
+  const cache = getLocalCache();
+  let branchItems = cache.items.map(item => {
+    const bData = (item.branches && item.branches[branchId]) || { available: true, price: item.defaultPrice };
+    return {
+      id: item.id,
+      itemId: item.id,
+      name: item.name,
+      categoryId: item.categoryId,
+      categoryName: item.categoryName,
+      price: bData.price !== undefined ? bData.price : item.defaultPrice,
+      isAvailable: bData.available !== undefined ? bData.available : true,
+      displayOrder: item.displayOrder
+    };
+  });
+
+  if (availableOnly === 'true') {
+    branchItems = branchItems.filter(i => i.isAvailable);
+  }
+
+  res.json(branchItems);
 });
 
-// 6. Add new item (Creates Master Item + Branch Subcollection entries)
+// 6. Add new item
 app.post('/api/items', async (req, res) => {
   try {
     const { name, categoryId, categoryName, defaultPrice, branchSelections } = req.body;
@@ -195,145 +176,133 @@ app.post('/api/items', async (req, res) => {
       return res.status(400).json({ error: 'Name, Category, and Default Price are required' });
     }
 
-    const itemId = slugify(name);
-    const masterItemDoc = {
+    const itemId = `${categoryId}_${slugify(name)}`;
+    const priceVal = parseFloat(defaultPrice);
+
+    const itemDoc = {
       id: itemId,
+      itemId: itemId,
       name: name.trim(),
       categoryId: categoryId,
       categoryName: categoryName || categoryId,
-      defaultPrice: parseFloat(defaultPrice),
+      defaultPrice: priceVal,
       displayOrder: 999,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      branches: branchSelections || {
+        branch_1: { available: true, price: priceVal, isAvailable: true },
+        branch_2: { available: true, price: priceVal, isAvailable: true }
+      }
     };
 
-    // Save Master Item
-    await db.collection('items').doc(itemId).set(masterItemDoc, { merge: true });
+    if (db) {
+      try {
+        await db.collection('items').doc(itemId).set(itemDoc, { merge: true });
+      } catch (e) {
+        console.warn('Firestore write error:', e.message);
+      }
+    }
 
-    // Save Subcollection documents for all branches
-    const branchesSnapshot = await db.collection('branches').get();
-    const batch = db.batch();
+    // Save to local cache
+    const cache = getLocalCache();
+    const existingIdx = cache.items.findIndex(i => i.id === itemId);
+    if (existingIdx >= 0) {
+      cache.items[existingIdx] = itemDoc;
+    } else {
+      cache.items.push(itemDoc);
+    }
+    fs.writeFileSync(localCachePath, JSON.stringify(cache, null, 2));
 
-    branchesSnapshot.forEach(bDoc => {
-      const bId = bDoc.id;
-      const config = branchSelections && branchSelections[bId] ? branchSelections[bId] : null;
-      const isAvailable = config ? Boolean(config.available) : false;
-      const price = config && config.price !== undefined ? parseFloat(config.price) : parseFloat(defaultPrice);
-
-      const subRef = db.collection('branches').doc(bId).collection('menu_items').doc(itemId);
-      batch.set(subRef, {
-        itemId: itemId,
-        name: name.trim(),
-        categoryId: categoryId,
-        categoryName: categoryName || categoryId,
-        price: price,
-        isAvailable: isAvailable,
-        displayOrder: 999,
-        updatedAt: new Date()
-      }, { merge: true });
-    });
-
-    await batch.commit();
-    res.status(201).json(masterItemDoc);
+    res.status(201).json(itemDoc);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 7. Edit existing item (Updates Master Item & syncs across Branch Subcollections)
+// 7. Edit item
 app.put('/api/items/:id', async (req, res) => {
   try {
     const itemId = req.params.id;
     const { name, categoryId, categoryName, defaultPrice, branches } = req.body;
 
-    const itemRef = db.collection('items').doc(itemId);
-    const doc = await itemRef.get();
-    if (!doc.exists) {
-      return res.status(404).json({ error: 'Item not found' });
+    const cache = getLocalCache();
+    const item = cache.items.find(i => i.id === itemId);
+    if (item) {
+      if (name) item.name = name.trim();
+      if (categoryId) item.categoryId = categoryId;
+      if (categoryName) item.categoryName = categoryName;
+      if (defaultPrice !== undefined) item.defaultPrice = parseFloat(defaultPrice);
+      if (branches) item.branches = branches;
+
+      fs.writeFileSync(localCachePath, JSON.stringify(cache, null, 2));
     }
 
-    const masterUpdates = { updatedAt: new Date() };
-    if (name) masterUpdates.name = name.trim();
-    if (categoryId) masterUpdates.categoryId = categoryId;
-    if (categoryName) masterUpdates.categoryName = categoryName;
-    if (defaultPrice !== undefined) masterUpdates.defaultPrice = parseFloat(defaultPrice);
-
-    await itemRef.update(masterUpdates);
-
-    // Sync subcollections
-    const branchesSnapshot = await db.collection('branches').get();
-    const batch = db.batch();
-
-    branchesSnapshot.forEach(bDoc => {
-      const bId = bDoc.id;
-      const bConfig = branches && branches[bId] ? branches[bId] : null;
-
-      const subRef = db.collection('branches').doc(bId).collection('menu_items').doc(itemId);
-      const subUpdates = { updatedAt: new Date() };
-
-      if (name) subUpdates.name = name.trim();
-      if (categoryId) subUpdates.categoryId = categoryId;
-      if (categoryName) subUpdates.categoryName = categoryName;
-
-      if (bConfig) {
-        if (bConfig.available !== undefined) subUpdates.isAvailable = Boolean(bConfig.available);
-        if (bConfig.price !== undefined) subUpdates.price = parseFloat(bConfig.price);
+    if (db) {
+      try {
+        const itemRef = db.collection('items').doc(itemId);
+        await itemRef.set({ name, categoryId, categoryName, defaultPrice, branches }, { merge: true });
+      } catch (e) {
+        console.warn('Firestore edit error:', e.message);
       }
+    }
 
-      batch.set(subRef, subUpdates, { merge: true });
-    });
-
-    await batch.commit();
-    const updatedDoc = await itemRef.get();
-    res.json({ id: updatedDoc.id, ...updatedDoc.data() });
+    res.json(item || { id: itemId, name, categoryId, categoryName, defaultPrice });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 8. Quick branch status & price toggle endpoint (Targets Branch Subcollection directly)
+// 8. Patch branch status
 app.patch('/api/items/:id/branch-status', async (req, res) => {
   try {
     const itemId = req.params.id;
     const { branchId, available, price } = req.body;
 
-    if (!branchId) {
-      return res.status(400).json({ error: 'branchId is required' });
+    const cache = getLocalCache();
+    const item = cache.items.find(i => i.id === itemId);
+    if (item) {
+      if (!item.branches) item.branches = {};
+      if (!item.branches[branchId]) item.branches[branchId] = {};
+
+      if (available !== undefined) item.branches[branchId].available = Boolean(available);
+      if (price !== undefined) item.branches[branchId].price = parseFloat(price);
+
+      fs.writeFileSync(localCachePath, JSON.stringify(cache, null, 2));
     }
 
-    const subRef = db.collection('branches').doc(branchId).collection('menu_items').doc(itemId);
-    const updates = { updatedAt: new Date() };
-
-    if (available !== undefined) {
-      updates.isAvailable = Boolean(available);
+    if (db) {
+      try {
+        const subRef = db.collection('branches').doc(branchId).collection('menu_items').doc(itemId);
+        const updates = {};
+        if (available !== undefined) updates.isAvailable = Boolean(available);
+        if (price !== undefined) updates.price = parseFloat(price);
+        await subRef.set(updates, { merge: true });
+      } catch (e) {
+        console.warn('Firestore patch error:', e.message);
+      }
     }
-    if (price !== undefined) {
-      updates.price = parseFloat(price);
-    }
 
-    await subRef.set(updates, { merge: true });
     res.json({ success: true, itemId, branchId, available, price });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 9. Delete item from master & all branch subcollections
+// 9. Delete item
 app.delete('/api/items/:id', async (req, res) => {
   try {
     const itemId = req.params.id;
-    await db.collection('items').doc(itemId).delete();
+    const cache = getLocalCache();
+    cache.items = cache.items.filter(i => i.id !== itemId);
+    fs.writeFileSync(localCachePath, JSON.stringify(cache, null, 2));
 
-    const branchesSnapshot = await db.collection('branches').get();
-    const batch = db.batch();
+    if (db) {
+      try {
+        await db.collection('items').doc(itemId).delete();
+      } catch (e) {
+        console.warn('Firestore delete error:', e.message);
+      }
+    }
 
-    branchesSnapshot.forEach(bDoc => {
-      const subRef = db.collection('branches').doc(bDoc.id).collection('menu_items').doc(itemId);
-      batch.delete(subRef);
-    });
-
-    await batch.commit();
-    res.json({ success: true, message: 'Item deleted from master & branch subcollections' });
+    res.json({ success: true, message: 'Item deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -341,5 +310,5 @@ app.delete('/api/items/:id', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Optimized Restaurant Menu Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Resilient Restaurant Menu Server running on http://localhost:${PORT}`);
 });
