@@ -13,6 +13,7 @@ interface MenuRepository {
     suspend fun addBranch(branch: Branch)
     suspend fun updateBranch(branch: Branch)
     suspend fun deleteBranch(branchId: String)
+    suspend fun duplicateBranch(sourceBranchId: String, newBranch: Branch)
 
     suspend fun addCategory(category: Category)
     suspend fun updateCategory(category: Category)

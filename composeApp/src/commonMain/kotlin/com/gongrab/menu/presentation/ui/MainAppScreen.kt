@@ -125,12 +125,14 @@ fun SidebarButton(title: String, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 // =========================================================================
-// 1. BRANCHES MANAGEMENT VIEW
+// 1. BRANCHES MANAGEMENT VIEW (WITH COPY / DUPLICATE BRANCH FUNCTIONALITY)
 // =========================================================================
 @Composable
 fun BranchesView(branches: List<Branch>, repository: MenuRepository) {
     var showDialog by remember { mutableStateOf(false) }
+    var showDuplicateDialog by remember { mutableStateOf(false) }
     var editingBranch by remember { mutableStateOf<Branch?>(null) }
+    var sourceBranchToCopy by remember { mutableStateOf<Branch?>(null) }
     val scope = rememberCoroutineScope()
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -166,8 +168,11 @@ fun BranchesView(branches: List<Branch>, repository: MenuRepository) {
                             Text("ID: ${branch.id} | Address: ${branch.address.ifEmpty { "N/A" }}", color = TextMuted, fontSize = 12.sp)
                         }
                         Row {
+                            TextButton(onClick = { sourceBranchToCopy = branch; showDuplicateDialog = true }) {
+                                Text("📋 Copy Branch", color = LeafGreen, fontWeight = FontWeight.Bold)
+                            }
                             TextButton(onClick = { editingBranch = branch; showDialog = true }) {
-                                Text("Edit", color = LeafGreen)
+                                Text("Edit", color = Color.White)
                             }
                             TextButton(onClick = { scope.launch { repository.deleteBranch(branch.id) } }) {
                                 Text("Delete", color = Color(0xFFEF4444))
@@ -188,6 +193,20 @@ fun BranchesView(branches: List<Branch>, repository: MenuRepository) {
                 scope.launch {
                     if (editingBranch == null) repository.addBranch(branch) else repository.updateBranch(branch)
                     showDialog = false
+                }
+            }
+        )
+    }
+
+    if (showDuplicateDialog && sourceBranchToCopy != null) {
+        DuplicateBranchDialog(
+            sourceBranch = sourceBranchToCopy!!,
+            existingBranches = branches,
+            onDismiss = { showDuplicateDialog = false },
+            onDuplicate = { newBranch ->
+                scope.launch {
+                    repository.duplicateBranch(sourceBranchToCopy!!.id, newBranch)
+                    showDuplicateDialog = false
                 }
             }
         )
@@ -253,6 +272,76 @@ fun BranchDialog(
     )
 }
 
+// DUPLICATE BRANCH DIALOG WITH FULL ITEM/CATEGORY DATA CLONING
+@Composable
+fun DuplicateBranchDialog(
+    sourceBranch: Branch,
+    existingBranches: List<Branch>,
+    onDismiss: () -> Unit,
+    onDuplicate: (Branch) -> Unit
+) {
+    var name by remember { mutableStateOf("${sourceBranch.name} (Copy)") }
+    var address by remember { mutableStateOf(sourceBranch.address) }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Copy Branch: ${sourceBranch.name}", color = LeafGreen) },
+        text = {
+            Column {
+                Text(
+                    text = "Creating a copy will clone all categories and item price configurations from ${sourceBranch.name} into the new branch.",
+                    fontSize = 12.sp,
+                    color = TextMuted,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                if (errorMsg != null) {
+                    Text(errorMsg!!, color = Color(0xFFEF4444), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                }
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it; errorMsg = null },
+                    label = { Text("New Branch Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text("Address / Location") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val validation = ValidationEngine.validateBranch(name, existingBranches)
+                    if (!validation.isValid) {
+                        errorMsg = validation.errorMessage
+                    } else {
+                        val id = "branch_${System.currentTimeMillis() % 100000}"
+                        onDuplicate(Branch(id, name.trim(), address.trim()))
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color.Black)
+            ) {
+                Text("Duplicate & Clone Data", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = Color.White) }
+        },
+        containerColor = CardNavySurface
+    )
+}
+
 // =========================================================================
 // 2. CATEGORIES MANAGEMENT VIEW (WITH SEARCH FILTER)
 // =========================================================================
@@ -285,7 +374,6 @@ fun CategoriesView(categories: List<Category>, repository: MenuRepository) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Category Search Bar
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -448,7 +536,6 @@ fun ItemsView(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Item Search Bar
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -536,7 +623,6 @@ fun FullScreenMenuItemEditor(
     var defaultPriceText by remember { mutableStateOf(item?.defaultPrice?.toString() ?: "149") }
     var errorMsg by remember { mutableStateOf<String?>(null) }
 
-    // Category search query inside editor
     var categorySearchQuery by remember { mutableStateOf("") }
 
     val filteredCategories = remember(categories, categorySearchQuery) {
@@ -656,9 +742,7 @@ fun FullScreenMenuItemEditor(
                 // --- SPLIT BODY CONTENT ---
                 Row(modifier = Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                     
-                    // =====================================================
                     // LEFT COLUMN (60% WIDTH): MULTI-BRANCH PRICE MATRIX
-                    // =====================================================
                     Card(
                         colors = CardDefaults.cardColors(containerColor = CardNavySurface),
                         modifier = Modifier
@@ -767,9 +851,7 @@ fun FullScreenMenuItemEditor(
                         }
                     }
 
-                    // =====================================================
                     // RIGHT COLUMN (40% WIDTH): CORE PROPERTIES & SEARCHABLE CATEGORY SELECTOR
-                    // =====================================================
                     Card(
                         colors = CardDefaults.cardColors(containerColor = CardNavySurface),
                         modifier = Modifier
@@ -800,7 +882,6 @@ fun FullScreenMenuItemEditor(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // SEARCHABLE CATEGORY SELECTOR
                             Text("Search & Select Category:", color = LeafGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(6.dp))
 
@@ -818,7 +899,6 @@ fun FullScreenMenuItemEditor(
                             Text("Selected: ${selectedCat?.name ?: "None"}", color = LeafGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(6.dp))
 
-                            // Scrollable list of filtered categories inside editor
                             Card(
                                 colors = CardDefaults.cardColors(containerColor = DarkNavyBg),
                                 modifier = Modifier
@@ -869,7 +949,6 @@ fun FullScreenMenuItemEditor(
 
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // LIVE PREVIEW CARD
                             Card(
                                 colors = CardDefaults.cardColors(containerColor = DarkNavyBg),
                                 modifier = Modifier.fillMaxWidth().border(1.dp, BorderGreen.copy(alpha = 0.4f), RoundedCornerShape(8.dp))

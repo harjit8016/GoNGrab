@@ -28,7 +28,6 @@ class MenuRepositoryImpl(
         val currentDir = File(rootPath)
         val candidateFiles = mutableListOf<File>()
 
-        // Add candidate paths in order of preference
         candidateFiles.add(File(currentDir, "data_cache.json"))
         candidateFiles.add(File(currentDir, "data.json"))
         
@@ -37,7 +36,6 @@ class MenuRepositoryImpl(
             candidateFiles.add(File(parent, "data.json"))
         }
 
-        // Return first existing file with content > 100 bytes
         return candidateFiles.firstOrNull { it.exists() && it.length() > 100 }
     }
 
@@ -71,9 +69,7 @@ class MenuRepositoryImpl(
                 _branches.value = cache.branches.ifEmpty { defaultBranches() }
                 _categories.value = cache.categories
                 _items.value = cache.items
-                println("✓ Loaded ${cache.categories.size} categories and ${cache.items.size} items from ${targetFile.absolutePath}")
             } else {
-                println("No data file found, using defaults.")
                 _branches.value = defaultBranches()
             }
         } catch (e: Exception) {
@@ -100,7 +96,6 @@ class MenuRepositoryImpl(
             val targetFile = activeDataFile
             targetFile.writeText(jsonText)
             
-            // Also sync to root data_cache.json if targetFile is different
             val rootCache = File(rootPath, "data_cache.json")
             if (rootCache.absolutePath != targetFile.absolutePath) {
                 rootCache.writeText(jsonText)
@@ -125,6 +120,25 @@ class MenuRepositoryImpl(
         _items.value = _items.value.map { item ->
             item.copy(branches = item.branches.filterKeys { it != branchId })
         }
+        saveToDisk()
+    }
+
+    override suspend fun duplicateBranch(sourceBranchId: String, newBranch: Branch) {
+        // 1. Add new branch
+        _branches.value = _branches.value + newBranch
+
+        // 2. Clone all item branch configs (prices and availability) from sourceBranchId -> newBranch.id
+        _items.value = _items.value.map { item ->
+            val sourceConfig = item.branches[sourceBranchId]
+            if (sourceConfig != null) {
+                val updatedBranches = item.branches.toMutableMap()
+                updatedBranches[newBranch.id] = sourceConfig.copy()
+                item.copy(branches = updatedBranches)
+            } else {
+                item
+            }
+        }
+
         saveToDisk()
     }
 
