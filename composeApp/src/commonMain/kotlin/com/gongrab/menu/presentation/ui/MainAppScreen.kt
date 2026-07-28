@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.gongrab.menu.domain.model.Branch
 import com.gongrab.menu.domain.model.BranchPriceConfig
 import com.gongrab.menu.domain.model.Category
@@ -31,7 +33,6 @@ import com.gongrab.menu.presentation.theme.DarkNavyBg
 import com.gongrab.menu.presentation.theme.LeafGreen
 import com.gongrab.menu.presentation.theme.TextMuted
 import kotlinx.coroutines.launch
-import java.util.UUID
 
 enum class NavTab { BRANCHES, CATEGORIES, ITEMS }
 
@@ -41,7 +42,6 @@ fun MainAppScreen(repository: MenuRepository) {
     val branches by repository.branches.collectAsState()
     val categories by repository.categories.collectAsState()
     val items by repository.items.collectAsState()
-    val scope = rememberCoroutineScope()
 
     Row(modifier = Modifier.fillMaxSize().background(DarkNavyBg)) {
         // --- SIDEBAR ---
@@ -385,7 +385,7 @@ fun CategoryDialog(
 }
 
 // =========================================================================
-// 3. MENU ITEMS VIEW (MULTI-BRANCH PRICING SELECTION & OVERRIDES)
+// 3. MENU ITEMS VIEW (EXPANDED FULL-SCREEN SPLIT EDITOR)
 // =========================================================================
 @Composable
 fun ItemsView(
@@ -394,7 +394,7 @@ fun ItemsView(
     branches: List<Branch>,
     repository: MenuRepository
 ) {
-    var showDialog by remember { mutableStateOf(false) }
+    var showEditor by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<MenuItem?>(null) }
     val scope = rememberCoroutineScope()
 
@@ -406,7 +406,7 @@ fun ItemsView(
         ) {
             Text("Menu Catalog Items", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Button(
-                onClick = { editingItem = null; showDialog = true },
+                onClick = { editingItem = null; showEditor = true },
                 colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color.Black)
             ) {
                 Text("+ Add New Item", fontWeight = FontWeight.Bold)
@@ -430,17 +430,16 @@ fun ItemsView(
                             Text(item.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
                             Text("Category: ${item.categoryName} | Base Price: ₹${item.defaultPrice}", color = LeafGreen, fontSize = 13.sp)
                             
-                            // Render active branch prices
                             val branchSummary = branches.mapNotNull { b ->
                                 val config = item.branches[b.id]
                                 if (config != null) "${b.name}: ₹${config.price}" else null
                             }.joinToString(" | ")
 
-                            Text("Branch Pricing: $branchSummary", color = TextMuted, fontSize = 12.sp)
+                            Text("Branch Pricing: ${branchSummary.ifEmpty { "None Selected" }}", color = TextMuted, fontSize = 12.sp)
                         }
 
                         Row {
-                            TextButton(onClick = { editingItem = item; showDialog = true }) {
+                            TextButton(onClick = { editingItem = item; showEditor = true }) {
                                 Text("Edit", color = LeafGreen)
                             }
                             TextButton(onClick = { scope.launch { repository.deleteMenuItem(item.id) } }) {
@@ -453,26 +452,27 @@ fun ItemsView(
         }
     }
 
-    if (showDialog) {
-        MenuItemDialog(
+    if (showEditor) {
+        FullScreenMenuItemEditor(
             item = editingItem,
             categories = categories,
             branches = branches,
             existingItems = items,
-            onDismiss = { showDialog = false },
+            onDismiss = { showEditor = false },
             onSave = { newItem ->
                 scope.launch {
                     if (editingItem == null) repository.addMenuItem(newItem) else repository.updateMenuItem(newItem)
-                    showDialog = false
+                    showEditor = false
                 }
             }
         )
     }
 }
 
+// FULL-SCREEN / EXTENDED SPLIT EDITOR FOR UNLIMITED BRANCHES
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MenuItemDialog(
+fun FullScreenMenuItemEditor(
     item: MenuItem?,
     categories: List<Category>,
     branches: List<Branch>,
@@ -485,7 +485,6 @@ fun MenuItemDialog(
     var defaultPriceText by remember { mutableStateOf(item?.defaultPrice?.toString() ?: "149") }
     var errorMsg by remember { mutableStateOf<String?>(null) }
 
-    // Multi-branch selection map: BranchId -> Selected State (Boolean)
     val selectedBranchesMap = remember {
         mutableStateMapOf<String, Boolean>().apply {
             branches.forEach { b ->
@@ -494,7 +493,6 @@ fun MenuItemDialog(
         }
     }
 
-    // Per-branch custom price overrides: BranchId -> Price (String)
     val branchPricesMap = remember {
         mutableStateMapOf<String, String>().apply {
             branches.forEach { b ->
@@ -504,156 +502,317 @@ fun MenuItemDialog(
         }
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (item == null) "Create Menu Item" else "Edit Menu Item", color = LeafGreen) },
-        text = {
-            Column(modifier = Modifier.width(440.dp).verticalScroll(rememberScrollState())) {
-                if (errorMsg != null) {
-                    Text(errorMsg!!, color = Color(0xFFEF4444), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
-                }
-
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it; errorMsg = null },
-                    label = { Text("Item Name") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Category Selection Dropdown
-                Text("Category Selection:", color = LeafGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                var categoryExpanded by remember { mutableStateOf(false) }
-                val currentCategory = categories.find { it.id == selectedCategoryId }
-
-                ExposedDropdownMenuBox(
-                    expanded = categoryExpanded,
-                    onExpandedChange = { categoryExpanded = !categoryExpanded }
-                ) {
-                    OutlinedTextField(
-                        value = currentCategory?.name ?: "Select Category",
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
-                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = categoryExpanded,
-                        onDismissRequest = { categoryExpanded = false }
-                    ) {
-                        categories.forEach { cat ->
-                            DropdownMenuItem(
-                                text = { Text(cat.name) },
-                                onClick = {
-                                    selectedCategoryId = cat.id
-                                    categoryExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = defaultPriceText,
-                    onValueChange = { 
-                        defaultPriceText = it
-                        // Auto-fill branch overrides if default price changes
-                        branches.forEach { b ->
-                            if (branchPricesMap[b.id].isNullOrEmpty() || branchPricesMap[b.id] == defaultPriceText) {
-                                branchPricesMap[b.id] = it
-                            }
-                        }
-                    },
-                    label = { Text("Default Base Price (₹)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Multi-Branch Selection & Custom Branch Prices:", color = LeafGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(6.dp))
-
-                branches.forEach { b ->
-                    val isChecked = selectedBranchesMap[b.id] ?: false
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = isChecked,
-                                onCheckedChange = { selectedBranchesMap[b.id] = it },
-                                colors = CheckboxDefaults.colors(checkedColor = LeafGreen)
-                            )
-                            Text(b.name, color = Color.White, fontSize = 14.sp)
-                        }
-
-                        if (isChecked) {
-                            OutlinedTextField(
-                                value = branchPricesMap[b.id] ?: defaultPriceText,
-                                onValueChange = { branchPricesMap[b.id] = it },
-                                label = { Text("Branch ₹") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier.width(120.dp)
-                            )
-                        }
-                    }
-                }
+    val branchAvailabilityMap = remember {
+        mutableStateMapOf<String, Boolean>().apply {
+            branches.forEach { b ->
+                val bAvail = item?.branches?.get(b.id)?.available ?: true
+                put(b.id, bAvail)
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val activeBranches = selectedBranchesMap.filterValues { it }.keys
-                    val validation = ValidationEngine.validateMenuItem(
-                        name = name,
-                        categoryId = selectedCategoryId,
-                        defaultPriceText = defaultPriceText,
-                        selectedBranchIds = activeBranches,
-                        branchPricesMap = branchPricesMap,
-                        existingItems = existingItems,
-                        currentId = item?.id
-                    )
+        }
+    }
 
-                    if (!validation.isValid) {
-                        errorMsg = validation.errorMessage
-                    } else {
-                        val itemId = item?.id ?: "item_${System.currentTimeMillis()}"
-                        val categoryName = categories.find { it.id == selectedCategoryId }?.name ?: ""
-                        val defaultPrice = defaultPriceText.toDoubleOrNull() ?: 0.0
-
-                        val branchConfigs = activeBranches.associateWith { bId ->
-                            val bPrice = branchPricesMap[bId]?.toDoubleOrNull() ?: defaultPrice
-                            BranchPriceConfig(price = bPrice, available = true)
-                        }
-
-                        onSave(
-                            MenuItem(
-                                id = itemId,
-                                name = name.trim(),
-                                categoryId = selectedCategoryId,
-                                categoryName = categoryName,
-                                defaultPrice = defaultPrice,
-                                branches = branchConfigs
-                            )
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = DarkNavyBg),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxSize(0.95f)
+                .border(1.dp, BorderGreen, RoundedCornerShape(12.dp))
+        ) {
+            Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+                // --- TOP HEADER BAR ---
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = if (item == null) "Create Menu Item" else "Edit Menu Item: ${item.name}",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = LeafGreen
+                        )
+                        Text(
+                            text = "Set item details on the right and multi-branch pricing matrix on the left.",
+                            fontSize = 12.sp,
+                            color = TextMuted
                         )
                     }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color.Black)
-            ) {
-                Text("Save")
+
+                    Row {
+                        OutlinedButton(onClick = onDismiss, modifier = Modifier.padding(end = 12.dp)) {
+                            Text("Cancel", color = Color.White)
+                        }
+                        Button(
+                            onClick = {
+                                val activeBranches = selectedBranchesMap.filterValues { it }.keys
+                                val validation = ValidationEngine.validateMenuItem(
+                                    name = name,
+                                    categoryId = selectedCategoryId,
+                                    defaultPriceText = defaultPriceText,
+                                    selectedBranchIds = activeBranches,
+                                    branchPricesMap = branchPricesMap,
+                                    existingItems = existingItems,
+                                    currentId = item?.id
+                                )
+
+                                if (!validation.isValid) {
+                                    errorMsg = validation.errorMessage
+                                } else {
+                                    val itemId = item?.id ?: "item_${System.currentTimeMillis()}"
+                                    val categoryName = categories.find { it.id == selectedCategoryId }?.name ?: ""
+                                    val defaultPrice = defaultPriceText.toDoubleOrNull() ?: 0.0
+
+                                    val branchConfigs = activeBranches.associateWith { bId ->
+                                        val bPrice = branchPricesMap[bId]?.toDoubleOrNull() ?: defaultPrice
+                                        val bAvail = branchAvailabilityMap[bId] ?: true
+                                        BranchPriceConfig(price = bPrice, available = bAvail)
+                                    }
+
+                                    onSave(
+                                        MenuItem(
+                                            id = itemId,
+                                            name = name.trim(),
+                                            categoryId = selectedCategoryId,
+                                            categoryName = categoryName,
+                                            defaultPrice = defaultPrice,
+                                            branches = branchConfigs
+                                        )
+                                    )
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color.Black)
+                        ) {
+                            Text("Save Menu Item", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // --- SPLIT BODY CONTENT ---
+                Row(modifier = Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                    
+                    // =====================================================
+                    // LEFT COLUMN (60% WIDTH): MULTI-BRANCH PRICE MATRIX
+                    // =====================================================
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = CardNavySurface),
+                        modifier = Modifier
+                            .weight(0.6f)
+                            .fillMaxHeight()
+                            .border(1.dp, BorderGreen.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                    ) {
+                        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Multi-Branch Price & Availability Matrix (${branches.size} Branches)",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = LeafGreen
+                                )
+
+                                // Batch selection controls
+                                Row {
+                                    TextButton(onClick = {
+                                        branches.forEach { selectedBranchesMap[it.id] = true }
+                                    }) {
+                                        Text("Select All", fontSize = 12.sp, color = LeafGreen)
+                                    }
+                                    TextButton(onClick = {
+                                        branches.forEach { selectedBranchesMap[it.id] = false }
+                                    }) {
+                                        Text("Deselect All", fontSize = 12.sp, color = TextMuted)
+                                    }
+                                    TextButton(onClick = {
+                                        branches.forEach { branchPricesMap[it.id] = defaultPriceText }
+                                    }) {
+                                        Text("Sync Base Price", fontSize = 12.sp, color = LeafGreen)
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Scrollable list for unlimited branches (1 to 20+)
+                            LazyColumn(
+                                modifier = Modifier.weight(1f).fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(branches) { branch ->
+                                    val isSelected = selectedBranchesMap[branch.id] ?: false
+                                    val isAvailable = branchAvailabilityMap[branch.id] ?: true
+
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = if (isSelected) DarkNavyBg else CardNavySurface.copy(alpha = 0.5f)
+                                        ),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .border(
+                                                width = 1.dp,
+                                                color = if (isSelected) LeafGreen.copy(alpha = 0.6f) else BorderGreen.copy(alpha = 0.2f),
+                                                shape = RoundedCornerShape(8.dp)
+                                            )
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                                Checkbox(
+                                                    checked = isSelected,
+                                                    onCheckedChange = { selectedBranchesMap[branch.id] = it },
+                                                    colors = CheckboxDefaults.colors(checkedColor = LeafGreen)
+                                                )
+                                                Column(modifier = Modifier.padding(start = 8.dp)) {
+                                                    Text(branch.name, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                                                    Text("ID: ${branch.id}", color = TextMuted, fontSize = 11.sp)
+                                                }
+                                            }
+
+                                            if (isSelected) {
+                                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                                    // Availability Switch
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Text("Status: ", fontSize = 11.sp, color = TextMuted)
+                                                        Switch(
+                                                            checked = isAvailable,
+                                                            onCheckedChange = { branchAvailabilityMap[branch.id] = it },
+                                                            colors = SwitchDefaults.colors(checkedThumbColor = LeafGreen)
+                                                        )
+                                                    }
+
+                                                    // Price Overrides
+                                                    OutlinedTextField(
+                                                        value = branchPricesMap[branch.id] ?: defaultPriceText,
+                                                        onValueChange = { branchPricesMap[branch.id] = it },
+                                                        label = { Text("Price (₹)") },
+                                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                                        singleLine = true,
+                                                        modifier = Modifier.width(130.dp)
+                                                    )
+                                                }
+                                            } else {
+                                                Text("Disabled at this Branch", color = TextMuted, fontSize = 12.sp)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // =====================================================
+                    // RIGHT COLUMN (40% WIDTH): CORE ITEM PROPERTIES
+                    // =====================================================
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = CardNavySurface),
+                        modifier = Modifier
+                            .weight(0.4f)
+                            .fillMaxHeight()
+                            .border(1.dp, BorderGreen.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                    ) {
+                        Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
+                            Text("Item Core Properties", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = LeafGreen)
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            if (errorMsg != null) {
+                                Card(
+                                    colors = CardDefaults.cardColors(containerColor = Color(0x33EF4444)),
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
+                                ) {
+                                    Text(errorMsg!!, color = Color(0xFFEF4444), fontSize = 13.sp, modifier = Modifier.padding(12.dp))
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = name,
+                                onValueChange = { name = it; errorMsg = null },
+                                label = { Text("Item Name") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Category Selection Dropdown
+                            Text("Category Selection:", color = LeafGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            var categoryExpanded by remember { mutableStateOf(false) }
+                            val currentCategory = categories.find { it.id == selectedCategoryId }
+
+                            ExposedDropdownMenuBox(
+                                expanded = categoryExpanded,
+                                onExpandedChange = { categoryExpanded = !categoryExpanded }
+                            ) {
+                                OutlinedTextField(
+                                    value = currentCategory?.name ?: "Select Category",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                                    modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                                )
+                                ExposedDropdownMenu(
+                                    expanded = categoryExpanded,
+                                    onDismissRequest = { categoryExpanded = false }
+                                ) {
+                                    categories.forEach { cat ->
+                                        DropdownMenuItem(
+                                            text = { Text(cat.name) },
+                                            onClick = {
+                                                selectedCategoryId = cat.id
+                                                categoryExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            OutlinedTextField(
+                                value = defaultPriceText,
+                                onValueChange = { 
+                                    defaultPriceText = it
+                                },
+                                label = { Text("Default Base Price (₹)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // LIVE PREVIEW CARD
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = DarkNavyBg),
+                                modifier = Modifier.fillMaxWidth().border(1.dp, BorderGreen.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Text("Live Item Summary", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = LeafGreen)
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(name.ifEmpty { "[Item Name]" }, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = Color.White)
+                                    Text("Category: ${currentCategory?.name ?: "None"}", fontSize = 12.sp, color = TextMuted)
+                                    Text("Base Price: ₹${defaultPriceText.ifEmpty { "0" }}", fontSize = 12.sp, color = LeafGreen)
+
+                                    val activeCount = selectedBranchesMap.values.count { it }
+                                    Text("Selected Active Branches: $activeCount / ${branches.size}", fontSize = 12.sp, color = Color.White)
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = Color.White) }
-        },
-        containerColor = CardNavySurface
-    )
+        }
+    }
 }
