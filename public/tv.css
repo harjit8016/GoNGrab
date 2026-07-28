@@ -98,13 +98,7 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 72%;
-}
-
-.item-dots-fill {
-  flex: 1;
-  border-bottom: 1px dotted rgba(255, 255, 255, 0.2);
-  margin: 0 5px 3px 5px;
+  padding-right: 0.8vw;
 }
 
 .item-price-text {

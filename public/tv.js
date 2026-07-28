@@ -99,7 +99,6 @@ function renderTvBoard() {
       itemsHtml += `
         <div class="item-row-clean">
           <span class="item-name-text">${escapeHtml(item.name)}</span>
-          <span class="item-dots-fill"></span>
           <span class="item-price-text">₹${item.price}</span>
         </div>
       `;
