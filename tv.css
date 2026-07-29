@@ -24,6 +24,10 @@ html, body {
   background-color: var(--bg-dark);
   color: var(--text-white);
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 /* Full Screen TV Container - 100% Screen Height & Width Usage */

@@ -154,35 +154,44 @@ function updateMenuData(rawData) {
   renderTvBoard();
 }
 
-// Fullscreen API Handlers
-function enterFullscreen() {
-  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    const docEl = document.documentElement;
+// Fullscreen API Handlers with Cross-Browser Vendor Prefixes
+function toggleFullscreen(e) {
+  if (e && typeof e.preventDefault === 'function') {
+    try { e.preventDefault(); } catch (err) {}
+  }
+  const doc = document;
+  const isFS = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+
+  if (!isFS) {
+    const docEl = doc.documentElement;
     if (docEl.requestFullscreen) {
-      docEl.requestFullscreen().catch(err => console.warn('Fullscreen info:', err));
+      docEl.requestFullscreen().catch(err => console.warn('Fullscreen request notice:', err));
     } else if (docEl.webkitRequestFullscreen) {
       docEl.webkitRequestFullscreen();
+    } else if (docEl.mozRequestFullScreen) {
+      docEl.mozRequestFullScreen();
+    } else if (docEl.msRequestFullscreen) {
+      docEl.msRequestFullscreen();
     }
-  }
-}
-
-function toggleFullscreen() {
-  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    enterFullscreen();
   } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
+    if (doc.exitFullscreen) {
+      doc.exitFullscreen().catch(err => console.warn('Exit fullscreen notice:', err));
+    } else if (doc.webkitExitFullscreen) {
+      doc.webkitExitFullscreen();
+    } else if (doc.mozCancelFullScreen) {
+      doc.mozCancelFullScreen();
+    } else if (doc.msExitFullscreen) {
+      doc.msExitFullscreen();
     }
   }
 }
 
-document.addEventListener('dblclick', toggleFullscreen);
+document.addEventListener('dblclick', toggleFullscreen, { passive: false });
+window.addEventListener('dblclick', toggleFullscreen, { passive: false });
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'f' || e.key === 'F') {
-    toggleFullscreen();
+    toggleFullscreen(e);
   }
 });
 
