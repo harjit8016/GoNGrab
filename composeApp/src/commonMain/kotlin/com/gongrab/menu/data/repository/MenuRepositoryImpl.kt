@@ -191,6 +191,46 @@ class MenuRepositoryImpl(
         }
     }
 
+    private fun syncItemToFirebaseServer(item: MenuItem) {
+        try {
+            val url = java.net.URI("http://localhost:3000/api/items/${item.id}").toURL()
+            val conn = url.openConnection() as java.net.HttpURLConnection
+            conn.requestMethod = "PUT"
+            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
+            conn.doOutput = true
+
+            val itemJson = json.encodeToString(MenuItem.serializer(), item)
+            val input = itemJson.toByteArray(Charsets.UTF_8)
+            conn.setFixedLengthStreamingMode(input.size)
+
+            conn.outputStream.use { os ->
+                os.write(input, 0, input.size)
+            }
+
+            val code = conn.responseCode
+            println("✓ Synced item '${item.id}' ('${item.name}') to Firebase server. Status: $code")
+        } catch (e: Exception) {
+            println("Item sync to Firebase notice: ${e.message}")
+        }
+    }
+
+    private fun deleteItemFromFirebaseServer(itemId: String) {
+        try {
+            val url = java.net.URI("http://localhost:3000/api/items/$itemId").toURL()
+            val conn = url.openConnection() as java.net.HttpURLConnection
+            conn.requestMethod = "DELETE"
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
+
+            val code = conn.responseCode
+            println("✓ Deleted item '$itemId' on Firebase server. Status: $code")
+        } catch (e: Exception) {
+            println("Item delete sync notice: ${e.message}")
+        }
+    }
+
     override suspend fun addCategory(category: Category) {
         _categories.value = _categories.value + category
         saveToDisk()
@@ -215,15 +255,18 @@ class MenuRepositoryImpl(
     override suspend fun addMenuItem(item: MenuItem) {
         _items.value = _items.value + item
         saveToDisk()
+        syncItemToFirebaseServer(item)
     }
 
     override suspend fun updateMenuItem(item: MenuItem) {
         _items.value = _items.value.map { if (it.id == item.id) item else it }
         saveToDisk()
+        syncItemToFirebaseServer(item)
     }
 
     override suspend fun deleteMenuItem(itemId: String) {
         _items.value = _items.value.filter { it.id != itemId }
         saveToDisk()
+        deleteItemFromFirebaseServer(itemId)
     }
 }

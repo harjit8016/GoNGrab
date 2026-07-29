@@ -48,20 +48,21 @@ function initLiveDbListener() {
         if (menuData && menuData.length > 0) renderTvBoard();
       }, (err) => console.warn('Categories listener info:', err.message));
 
-      // Listen doc items in branch
-      db.collection('branches').doc(currentBranchId).collection('menu_items')
+      // Listen to master items collection in real-time
+      db.collection('items')
         .onSnapshot((snapshot) => {
           if (!snapshot.empty) {
             const liveItems = [];
             snapshot.forEach(doc => {
               const data = doc.data();
-              if (data && data.isAvailable !== false) {
+              const bData = (data.branches && data.branches[currentBranchId]) || { available: true, price: data.defaultPrice };
+              if (data && bData.available !== false && bData.isAvailable !== false) {
                 liveItems.push({
                   id: doc.id,
                   name: data.name,
                   categoryId: data.categoryId,
                   categoryName: data.categoryName || 'General',
-                  price: data.price || 0,
+                  price: bData.price !== undefined ? bData.price : data.defaultPrice,
                   displayOrder: data.displayOrder || 999,
                   animatedSvg: data.animatedSvg || '',
                   iconKey: data.iconKey || ''
@@ -76,7 +77,7 @@ function initLiveDbListener() {
           }
           fetchTvMenuFallback();
         }, (error) => {
-          console.warn('Firestore live listener notice:', error.message);
+          console.warn('Firestore items listener notice:', error.message);
           fetchTvMenuFallback();
         });
     } else {

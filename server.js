@@ -294,30 +294,44 @@ app.post('/api/items', async (req, res) => {
 app.put('/api/items/:id', async (req, res) => {
   try {
     const itemId = req.params.id;
-    const { name, categoryId, categoryName, defaultPrice, branches } = req.body;
+    const body = req.body || {};
+    const { name, categoryId, categoryName, defaultPrice, branches, displayOrder } = body;
 
     const cache = getLocalCache();
-    const item = cache.items.find(i => i.id === itemId);
+    let item = cache.items.find(i => i.id === itemId);
+
     if (item) {
       if (name) item.name = name.trim();
       if (categoryId) item.categoryId = categoryId;
       if (categoryName) item.categoryName = categoryName;
       if (defaultPrice !== undefined) item.defaultPrice = parseFloat(defaultPrice);
       if (branches) item.branches = branches;
-
-      fs.writeFileSync(localCachePath, JSON.stringify(cache, null, 2));
+      if (displayOrder !== undefined) item.displayOrder = displayOrder;
+    } else {
+      item = { id: itemId, itemId, ...body };
+      cache.items.push(item);
     }
+    fs.writeFileSync(localCachePath, JSON.stringify(cache, null, 2));
 
     if (db) {
       try {
         const itemRef = db.collection('items').doc(itemId);
-        await itemRef.set({ name, categoryId, categoryName, defaultPrice, branches }, { merge: true });
+        const docUpdates = { updatedAt: new Date() };
+        if (name) docUpdates.name = name.trim();
+        if (categoryId) docUpdates.categoryId = categoryId;
+        if (categoryName) docUpdates.categoryName = categoryName;
+        if (defaultPrice !== undefined) docUpdates.defaultPrice = parseFloat(defaultPrice);
+        if (branches) docUpdates.branches = branches;
+        if (displayOrder !== undefined) docUpdates.displayOrder = displayOrder;
+
+        await itemRef.set(docUpdates, { merge: true });
+        console.log(`✓ Firebase Firestore items/${itemId} updated (${name || item.name})`);
       } catch (e) {
         console.warn('Firestore edit error:', e.message);
       }
     }
 
-    res.json(item || { id: itemId, name, categoryId, categoryName, defaultPrice });
+    res.json(item);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

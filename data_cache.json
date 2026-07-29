@@ -2091,6 +2091,14 @@
         }
       },
       "displayOrder": 108
+    },
+    {
+      "id": "burgers_aaloo_tikki_burger",
+      "itemId": "burgers_aaloo_tikki_burger",
+      "name": "Aalloo Tikki Burger",
+      "categoryId": "burgers",
+      "categoryName": "Burgers",
+      "defaultPrice": 80
     }
   ]
 }
