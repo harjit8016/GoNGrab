@@ -85,13 +85,14 @@ html, body {
   padding-right: 0.4vw;
 }
 
-/* Maximize Animated SVG Icon size on trailing right edge without overlap */
+/* Maximize Animated SVG Icon size on trailing right edge with ambient neon glow */
 .cat-title-svg, .cat-animated-svg {
-  height: clamp(1.3rem, 2.1vw, 2.4rem);
-  width: clamp(1.3rem, 2.1vw, 2.4rem);
+  height: clamp(1.4rem, 2.3vw, 2.6rem);
+  width: clamp(1.4rem, 2.3vw, 2.6rem);
   flex-shrink: 0;
   margin-left: auto;
   display: block;
+  filter: drop-shadow(0 2px 6px rgba(158, 201, 86, 0.45));
 }
 
 /* Items List - Stretched Cleanly */
