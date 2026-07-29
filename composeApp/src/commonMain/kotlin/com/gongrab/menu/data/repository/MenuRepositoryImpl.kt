@@ -78,8 +78,41 @@ class MenuRepositoryImpl(
                 _branches.value = defaultBranches()
             }
         } catch (e: Exception) {
-            println("Error loading menu data: ${e.message}")
+            println("Error loading local menu data: ${e.message}")
             _branches.value = defaultBranches()
+        }
+        loadFromFirebaseServer()
+    }
+
+    private fun loadFromFirebaseServer() {
+        try {
+            val catUrl = java.net.URI("http://localhost:3000/api/categories").toURL()
+            val catConn = catUrl.openConnection() as java.net.HttpURLConnection
+            catConn.connectTimeout = 5000
+            catConn.readTimeout = 5000
+            if (catConn.responseCode == 200) {
+                val text = catConn.inputStream.bufferedReader().use { it.readText() }
+                val fetchedCats = json.decodeFromString<List<Category>>(text)
+                if (fetchedCats.isNotEmpty()) {
+                    _categories.value = fetchedCats
+                    println("✓ Loaded ${fetchedCats.size} categories directly from Firebase server")
+                }
+            }
+
+            val itemUrl = java.net.URI("http://localhost:3000/api/items").toURL()
+            val itemConn = itemUrl.openConnection() as java.net.HttpURLConnection
+            itemConn.connectTimeout = 5000
+            itemConn.readTimeout = 5000
+            if (itemConn.responseCode == 200) {
+                val text = itemConn.inputStream.bufferedReader().use { it.readText() }
+                val fetchedItems = json.decodeFromString<List<MenuItem>>(text)
+                if (fetchedItems.isNotEmpty()) {
+                    _items.value = fetchedItems
+                    println("✓ Loaded ${fetchedItems.size} items directly from Firebase server")
+                }
+            }
+        } catch (e: Exception) {
+            println("Server database fetch notice: ${e.message}")
         }
     }
 
