@@ -359,7 +359,7 @@ const ANIMATED_SVG_PRESETS = {
 
   wrap: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><style>@keyframes rollWrap { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-6deg); } } .anim-wrap-roll { animation: rollWrap 2s ease-in-out infinite; transform-origin: center; }</style><g class="anim-wrap-roll"><path d="M24 24 L62 84 Q68 92 76 84 L82 74 Q84 66 76 62 L24 24 Z" fill="#FEF08A" stroke="#EAB308" stroke-width="2.5" /><path d="M30 30 L60 70 Z" fill="#22C55E" stroke="#15803D" stroke-width="4" stroke-linecap="round" /></g></svg>`,
 
-  addons: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><style>@keyframes plusPulse { 0%,100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.1) rotate(90deg); } } .anim-plus-badge { animation: plusPulse 3s ease-in-out infinite; transform-origin: center; }</style><g class="anim-plus-badge"><circle cx="50" cy="50" r="36" fill="#9EC956" opacity="0.25" stroke="#9EC956" stroke-width="3" /><path d="M50 28 L50 72 M28 50 L72 50" stroke="#9EC956" stroke-width="8" stroke-linecap="round" /></g></svg>`
+  addons: `<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><style>@keyframes simplePlusZoom { 0%,100% { transform: scale(1); opacity: 0.85; } 50% { transform: scale(1.15); opacity: 1; } } .anim-simple-plus { animation: simplePlusZoom 2.2s ease-in-out infinite; transform-origin: center; }</style><path class="anim-simple-plus" d="M50 20 L50 80 M20 50 L80 50" stroke="#9EC956" stroke-width="12" stroke-linecap="round" /></svg>`
 };
 
 function getCategorySvg(categoryName, customSvg) {
