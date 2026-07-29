@@ -1,5 +1,6 @@
 package com.gongrab.menu.domain.repository
 
+import com.gongrab.menu.domain.model.AnimatedSvgItem
 import com.gongrab.menu.domain.model.Branch
 import com.gongrab.menu.domain.model.Category
 import com.gongrab.menu.domain.model.MenuItem
@@ -9,6 +10,7 @@ interface MenuRepository {
     val branches: StateFlow<List<Branch>>
     val categories: StateFlow<List<Category>>
     val items: StateFlow<List<MenuItem>>
+    val animatedSvgPack: StateFlow<List<AnimatedSvgItem>>
 
     suspend fun addBranch(branch: Branch)
     suspend fun updateBranch(branch: Branch)
@@ -23,5 +25,6 @@ interface MenuRepository {
     suspend fun updateMenuItem(item: MenuItem)
     suspend fun deleteMenuItem(itemId: String)
     
+    suspend fun saveAnimatedSvgToPack(item: AnimatedSvgItem)
     suspend fun reloadData()
 }

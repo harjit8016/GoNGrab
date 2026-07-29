@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.gongrab.menu.domain.model.AnimatedSvgItem
 import com.gongrab.menu.domain.model.Branch
 import com.gongrab.menu.domain.model.BranchPriceConfig
 import com.gongrab.menu.domain.model.Category
@@ -32,6 +33,7 @@ import com.gongrab.menu.presentation.theme.CardNavySurface
 import com.gongrab.menu.presentation.theme.DarkNavyBg
 import com.gongrab.menu.presentation.theme.LeafGreen
 import com.gongrab.menu.presentation.theme.TextMuted
+import com.gongrab.menu.presentation.ui.components.AnimatedSvgPickerModal
 import kotlinx.coroutines.launch
 
 enum class NavTab { BRANCHES, CATEGORIES, ITEMS }
@@ -350,6 +352,7 @@ fun CategoriesView(categories: List<Category>, repository: MenuRepository) {
     var showDialog by remember { mutableStateOf(false) }
     var editingCategory by remember { mutableStateOf<Category?>(null) }
     var searchQuery by remember { mutableStateOf("") }
+    val animatedSvgPack by repository.animatedSvgPack.collectAsState()
     val scope = rememberCoroutineScope()
 
     val filteredCategories = remember(categories, searchQuery) {
@@ -424,6 +427,8 @@ fun CategoriesView(categories: List<Category>, repository: MenuRepository) {
         CategoryDialog(
             category = editingCategory,
             existingCategories = categories,
+            animatedSvgPack = animatedSvgPack,
+            repository = repository,
             onDismiss = { showDialog = false },
             onSave = { category ->
                 scope.launch {
@@ -439,18 +444,23 @@ fun CategoriesView(categories: List<Category>, repository: MenuRepository) {
 fun CategoryDialog(
     category: Category?,
     existingCategories: List<Category>,
+    animatedSvgPack: List<AnimatedSvgItem>,
+    repository: MenuRepository,
     onDismiss: () -> Unit,
     onSave: (Category) -> Unit
 ) {
     var name by remember { mutableStateOf(category?.name ?: "") }
     var orderText by remember { mutableStateOf(category?.displayOrder?.toString() ?: "1") }
+    var animatedSvg by remember { mutableStateOf(category?.animatedSvg ?: "") }
+    var showAnimatedPicker by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (category == null) "Create Category" else "Edit Category", color = LeafGreen) },
         text = {
-            Column {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 if (errorMsg != null) {
                     Text(errorMsg!!, color = Color(0xFFEF4444), fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
                 }
@@ -470,6 +480,40 @@ fun CategoryDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text("Category Animated SVG Badge:", color = LeafGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Button(
+                    onClick = { showAnimatedPicker = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color.Black),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("🎬 ✨ Choose from Database Animated SVG Pack", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                if (animatedSvg.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "✓ Animated SVG Active (${animatedSvg.length} chars)",
+                            color = LeafGreen,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        TextButton(onClick = { animatedSvg = "" }) {
+                            Text("Clear", color = Color(0xFFEF4444), fontSize = 11.sp)
+                        }
+                    }
+                } else {
+                    Text("(No Animated SVG Selected)", color = TextMuted, fontSize = 11.sp)
+                }
             }
         },
         confirmButton = {
@@ -481,12 +525,12 @@ fun CategoryDialog(
                     } else {
                         val id = category?.id ?: name.trim().lowercase().replace(" ", "_")
                         val order = orderText.toIntOrNull() ?: 999
-                        onSave(Category(id, name.trim(), order))
+                        onSave(Category(id, name.trim(), order, animatedSvg))
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color.Black)
             ) {
-                Text("Save")
+                Text("Save Category", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -494,6 +538,18 @@ fun CategoryDialog(
         },
         containerColor = CardNavySurface
     )
+
+    if (showAnimatedPicker) {
+        AnimatedSvgPickerModal(
+            selectedAnimatedSvg = animatedSvg,
+            dbAnimatedSvgPack = animatedSvgPack,
+            onAnimatedSvgSelected = { newSvg -> animatedSvg = newSvg },
+            onUploadToDbPack = { newItem ->
+                scope.launch { repository.saveAnimatedSvgToPack(newItem) }
+            },
+            onDismiss = { showAnimatedPicker = false }
+        )
+    }
 }
 
 // =========================================================================

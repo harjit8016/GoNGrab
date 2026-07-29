@@ -63,10 +63,11 @@ html, body {
   margin-bottom: 0;
 }
 
-/* Logo Green Underline Header */
+/* Logo Green Underline Header - Trailing Aligned Animated SVG */
 .cat-title-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 0.4vh;
   padding-bottom: 0.25vh;
   border-bottom: 2px solid var(--logo-green);
@@ -78,6 +79,19 @@ html, body {
   color: var(--logo-green);
   text-transform: uppercase;
   letter-spacing: 0.7px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 0.4vw;
+}
+
+/* Maximize Animated SVG Icon size on trailing right edge without overlap */
+.cat-title-svg, .cat-animated-svg {
+  height: clamp(1.3rem, 2.1vw, 2.4rem);
+  width: clamp(1.3rem, 2.1vw, 2.4rem);
+  flex-shrink: 0;
+  margin-left: auto;
+  display: block;
 }
 
 /* Items List - Stretched Cleanly */

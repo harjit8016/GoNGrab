@@ -1,5 +1,6 @@
 package com.gongrab.menu.data.repository
 
+import com.gongrab.menu.domain.model.AnimatedSvgItem
 import com.gongrab.menu.domain.model.Branch
 import com.gongrab.menu.domain.model.Category
 import com.gongrab.menu.domain.model.MenuDataCache
@@ -52,6 +53,9 @@ class MenuRepositoryImpl(
     private val _items = MutableStateFlow<List<MenuItem>>(emptyList())
     override val items: StateFlow<List<MenuItem>> = _items.asStateFlow()
 
+    private val _animatedSvgPack = MutableStateFlow<List<AnimatedSvgItem>>(emptyList())
+    override val animatedSvgPack: StateFlow<List<AnimatedSvgItem>> = _animatedSvgPack.asStateFlow()
+
     private val scope = CoroutineScope(Dispatchers.IO)
 
     init {
@@ -69,6 +73,7 @@ class MenuRepositoryImpl(
                 _branches.value = cache.branches.ifEmpty { defaultBranches() }
                 _categories.value = cache.categories
                 _items.value = cache.items
+                _animatedSvgPack.value = cache.animatedSvgPack
             } else {
                 _branches.value = defaultBranches()
             }
@@ -90,19 +95,35 @@ class MenuRepositoryImpl(
             val cache = MenuDataCache(
                 categories = _categories.value,
                 branches = _branches.value,
-                items = _items.value
+                items = _items.value,
+                animatedSvgPack = _animatedSvgPack.value
             )
             val jsonText = json.encodeToString(MenuDataCache.serializer(), cache)
-            val targetFile = activeDataFile
-            targetFile.writeText(jsonText)
             
-            val rootCache = File(rootPath, "data_cache.json")
-            if (rootCache.absolutePath != targetFile.absolutePath) {
-                rootCache.writeText(jsonText)
+            val mainCache = File(rootPath, "data_cache.json")
+            mainCache.writeText(jsonText)
+
+            val rootData = File(rootPath, "data.json")
+            rootData.writeText(jsonText)
+
+            val publicData = File(rootPath, "public/data.json")
+            if (publicData.parentFile?.exists() == true) {
+                publicData.writeText(jsonText)
+            }
+
+            val active = activeDataFile
+            if (active.absolutePath != mainCache.absolutePath && active.exists()) {
+                active.writeText(jsonText)
             }
         } catch (e: Exception) {
             println("Error saving menu data: ${e.message}")
         }
+    }
+
+    override suspend fun saveAnimatedSvgToPack(item: AnimatedSvgItem) {
+        val existing = _animatedSvgPack.value.filter { it.id != item.id }
+        _animatedSvgPack.value = existing + item
+        saveToDisk()
     }
 
     override suspend fun addBranch(branch: Branch) {
@@ -142,9 +163,38 @@ class MenuRepositoryImpl(
         saveToDisk()
     }
 
+    private fun syncCategoryToFirebaseServer(category: Category) {
+        try {
+            val url = java.net.URI("http://localhost:3000/api/categories").toURL()
+            val conn = url.openConnection() as java.net.HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            conn.connectTimeout = 10000
+            conn.readTimeout = 10000
+            conn.doOutput = true
+
+            val nameJson = json.encodeToString(kotlinx.serialization.serializer(), category.name)
+            val svgJson = json.encodeToString(kotlinx.serialization.serializer(), category.animatedSvg)
+
+            val jsonPayload = """{"id":"${category.id}","name":$nameJson,"displayOrder":${category.displayOrder},"animatedSvg":$svgJson}"""
+            val input = jsonPayload.toByteArray(Charsets.UTF_8)
+            conn.setFixedLengthStreamingMode(input.size)
+
+            conn.outputStream.use { os ->
+                os.write(input, 0, input.size)
+            }
+
+            val code = conn.responseCode
+            println("✓ Synced category '${category.id}' (${input.size} bytes) to Firebase server. Status: $code")
+        } catch (e: Exception) {
+            println("Category sync to Firebase notice: ${e.message}")
+        }
+    }
+
     override suspend fun addCategory(category: Category) {
         _categories.value = _categories.value + category
         saveToDisk()
+        syncCategoryToFirebaseServer(category)
     }
 
     override suspend fun updateCategory(category: Category) {
@@ -153,6 +203,7 @@ class MenuRepositoryImpl(
             if (item.categoryId == category.id) item.copy(categoryName = category.name) else item
         }
         saveToDisk()
+        syncCategoryToFirebaseServer(category)
     }
 
     override suspend fun deleteCategory(categoryId: String) {

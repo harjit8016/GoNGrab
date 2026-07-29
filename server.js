@@ -8,7 +8,8 @@ const { getFirestore } = require('firebase-admin/firestore');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize Firebase Admin SDK
@@ -109,6 +110,59 @@ app.get('/api/categories', async (req, res) => {
   res.json(cache.categories);
 });
 
+// Save or Update Category directly to Firebase Firestore
+app.post('/api/categories', async (req, res) => {
+  try {
+    const { id, name, displayOrder, animatedSvg } = req.body;
+    if (!id || !name) return res.status(400).json({ error: 'Category ID and Name are required' });
+
+    const docData = {
+      id: id,
+      name: name.trim(),
+      displayOrder: parseInt(displayOrder) || 999,
+      animatedSvg: animatedSvg || '',
+      isActive: true,
+      updatedAt: new Date()
+    };
+
+    if (db) {
+      await db.collection('categories').doc(id).set(docData, { merge: true });
+      console.log(`✓ Firebase Firestore categories/${id} updated with animatedSvg (${(animatedSvg || '').length} chars)`);
+    }
+
+    const cache = getLocalCache();
+    const existingIdx = (cache.categories || []).findIndex(c => c.id === id);
+    if (existingIdx >= 0) {
+      cache.categories[existingIdx] = { ...cache.categories[existingIdx], ...docData };
+    } else {
+      if (!cache.categories) cache.categories = [];
+      cache.categories.push(docData);
+    }
+    fs.writeFileSync(localCachePath, JSON.stringify(cache, null, 2));
+
+    res.status(200).json(docData);
+  } catch (err) {
+    console.error('Error saving category to Firestore:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete Category from Firebase Firestore
+app.delete('/api/categories/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (db) {
+      await db.collection('categories').doc(id).delete();
+    }
+    const cache = getLocalCache();
+    cache.categories = (cache.categories || []).filter(c => c.id !== id);
+    fs.writeFileSync(localCachePath, JSON.stringify(cache, null, 2));
+    res.status(200).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 4. Get items
 app.get('/api/items', async (req, res) => {
   try {
@@ -147,8 +201,25 @@ app.get('/api/branches/:branchId/menu', async (req, res) => {
 
   // Resilient Local Cache Fallback
   const cache = getLocalCache();
+  const sanitizeKey = (str) => str ? String(str).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+  const categoriesMap = {};
+
+  (cache.categories || []).forEach(c => {
+    if (c.id) {
+      categoriesMap[c.id] = c;
+      categoriesMap[sanitizeKey(c.id)] = c;
+    }
+    if (c.name) {
+      categoriesMap[sanitizeKey(c.name)] = c;
+    }
+  });
+
   let branchItems = cache.items.map(item => {
     const bData = (item.branches && item.branches[branchId]) || { available: true, price: item.defaultPrice };
+    const catInfo = categoriesMap[item.categoryId] || 
+                    categoriesMap[sanitizeKey(item.categoryId)] || 
+                    categoriesMap[sanitizeKey(item.categoryName)] || {};
+
     return {
       id: item.id,
       itemId: item.id,
@@ -157,7 +228,9 @@ app.get('/api/branches/:branchId/menu', async (req, res) => {
       categoryName: item.categoryName,
       price: bData.price !== undefined ? bData.price : item.defaultPrice,
       isAvailable: bData.available !== undefined ? bData.available : true,
-      displayOrder: item.displayOrder
+      displayOrder: item.displayOrder,
+      animatedSvg: item.animatedSvg || catInfo.animatedSvg || '',
+      iconKey: item.iconKey || catInfo.iconKey || ''
     };
   });
 

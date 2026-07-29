@@ -13,7 +13,8 @@ data class Branch(
 data class Category(
     val id: String,
     val name: String,
-    val displayOrder: Int = 999
+    val displayOrder: Int = 999,
+    val animatedSvg: String = ""
 )
 
 @Serializable
@@ -34,10 +35,18 @@ data class MenuItem(
 )
 
 @Serializable
+data class AnimatedSvgItem(
+    val id: String,
+    val name: String,
+    val svgContent: String
+)
+
+@Serializable
 data class MenuDataCache(
     val categories: List<Category> = emptyList(),
     val branches: List<Branch> = emptyList(),
-    val items: List<MenuItem> = emptyList()
+    val items: List<MenuItem> = emptyList(),
+    val animatedSvgPack: List<AnimatedSvgItem> = emptyList()
 )
 
 data class ValidationResult(
