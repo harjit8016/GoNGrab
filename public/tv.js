@@ -30,6 +30,47 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('keydown', triggerAutoFs);
 });
 
+// Double-click toggle full screen
+document.addEventListener('dblclick', (e) => {
+  toggleFullscreen();
+});
+
+function toggleFullscreen() {
+  const elem = document.documentElement;
+  if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(() => {});
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen().catch(() => {});
+    } else if (elem.mozRequestFullScreen) {
+      elem.mozRequestFullScreen().catch(() => {});
+    } else if (elem.msRequestFullscreen) {
+      elem.msRequestFullscreen().catch(() => {});
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen().catch(() => {});
+    } else if (document.mozCancelFullScreen) {
+      document.mozCancelFullScreen().catch(() => {});
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen().catch(() => {});
+    }
+  }
+}
+
+function enterFullscreen() {
+  const elem = document.documentElement;
+  if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(() => {});
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen().catch(() => {});
+    }
+  }
+}
+
 // Remote-Friendly First Page Branch Selection Screen (Big Beautiful Centered Cards)
 function showBranchSelectionScreen() {
   let overlay = document.getElementById('branch-select-modal');
