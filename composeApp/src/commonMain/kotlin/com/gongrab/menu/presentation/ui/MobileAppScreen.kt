@@ -961,25 +961,32 @@ fun MobileCategoryDialog(
                         TextButton(onClick = { animatedSvg = "" }) { Text("Clear", color = Color(0xFFEF4444), fontSize = 11.sp) }
                     }
                 }
+
+                if (category != null && onDelete != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = onDelete,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEF4444)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444), modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("DELETE CATEGORY", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         },
         confirmButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (category != null && onDelete != null) {
-                    TextButton(onClick = onDelete) {
-                        Text("DELETE", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
-                    }
-                }
-                Button(
-                    onClick = {
-                        val order = orderText.toIntOrNull() ?: 999
-                        val id = category?.id ?: name.trim().lowercase().replace(" ", "_").ifBlank { "cat_${kotlin.random.Random.nextLong(100000, 999999)}" }
-                        onSave(Category(id = id, name = name.trim(), displayOrder = order, animatedSvg = animatedSvg))
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
-                ) {
-                    Text("SAVE CATEGORY", fontWeight = FontWeight.Bold)
-                }
+            Button(
+                onClick = {
+                    val order = orderText.toIntOrNull() ?: 999
+                    val id = category?.id ?: name.trim().lowercase().replace(" ", "_").ifBlank { "cat_${kotlin.random.Random.nextLong(100000, 999999)}" }
+                    onSave(Category(id = id, name = name.trim(), displayOrder = order, animatedSvg = animatedSvg))
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
+            ) {
+                Text("SAVE CATEGORY", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
