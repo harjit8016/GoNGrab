@@ -525,11 +525,16 @@ fun MobileCategoriesView(
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(filteredCategories, key = { it.id }) { cat ->
                 val hasAnimatedSvg = cat.animatedSvg.isNotBlank()
-                var showMenu by remember { mutableStateOf(false) }
 
                 Card(
                     colors = CardDefaults.cardColors(containerColor = CardNavySurface),
-                    modifier = Modifier.fillMaxWidth().border(1.dp, BorderGreen, RoundedCornerShape(12.dp))
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, BorderGreen, RoundedCornerShape(12.dp))
+                        .clickable {
+                            editingCategory = cat
+                            showCategoryDialog = true
+                        }
                 ) {
                     Row(
                         modifier = Modifier
@@ -561,32 +566,13 @@ fun MobileCategoriesView(
                             Text("Display Order: ${cat.displayOrder}", color = TextMuted, fontSize = 12.sp)
                         }
 
-                        Box {
-                            IconButton(onClick = { showMenu = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = Color.White)
+                        IconButton(
+                            onClick = {
+                                editingCategory = cat
+                                showCategoryDialog = true
                             }
-
-                            DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false },
-                                modifier = Modifier.background(CardNavySurface)
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("✏️ Edit Category", color = Color.White, fontWeight = FontWeight.Bold) },
-                                    onClick = {
-                                        showMenu = false
-                                        editingCategory = cat
-                                        showCategoryDialog = true
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("🗑️ Delete Category", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold) },
-                                    onClick = {
-                                        showMenu = false
-                                        coroutineScope.launch { repository.deleteCategory(cat.id) }
-                                    }
-                                )
-                            }
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit Category", tint = LeafGreen)
                         }
                     }
                 }
@@ -920,6 +906,7 @@ fun MobileCategoryDialog(
     animatedSvgPack: List<AnimatedSvgItem>,
     repository: MenuRepository,
     onDismiss: () -> Unit,
+    onDelete: (() -> Unit)? = null,
     onSave: (Category) -> Unit
 ) {
     var name by remember { mutableStateOf(category?.name ?: "") }
@@ -977,15 +964,22 @@ fun MobileCategoryDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val order = orderText.toIntOrNull() ?: 999
-                    val id = category?.id ?: name.trim().lowercase().replace(" ", "_").ifBlank { "cat_${kotlin.random.Random.nextLong(100000, 999999)}" }
-                    onSave(Category(id = id, name = name.trim(), displayOrder = order, animatedSvg = animatedSvg))
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
-            ) {
-                Text("SAVE CATEGORY", fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (category != null && onDelete != null) {
+                    TextButton(onClick = onDelete) {
+                        Text("DELETE", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                    }
+                }
+                Button(
+                    onClick = {
+                        val order = orderText.toIntOrNull() ?: 999
+                        val id = category?.id ?: name.trim().lowercase().replace(" ", "_").ifBlank { "cat_${kotlin.random.Random.nextLong(100000, 999999)}" }
+                        onSave(Category(id = id, name = name.trim(), displayOrder = order, animatedSvg = animatedSvg))
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
+                ) {
+                    Text("SAVE CATEGORY", fontWeight = FontWeight.Bold)
+                }
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
