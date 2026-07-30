@@ -425,9 +425,6 @@ fun MobileItemsView(
                                 }
 
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    IconButton(onClick = { showSvgPickerForItem = item }) {
-                                        Icon(Icons.Default.Star, contentDescription = "SVG", tint = LeafGreen)
-                                    }
                                     IconButton(onClick = { editingItem = item }) {
                                         Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF38BDF8))
                                     }
