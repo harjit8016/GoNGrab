@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.gongrab.menu.data.repository.MenuRepositoryImpl
 import com.gongrab.menu.presentation.theme.GoNGrabTheme
-import com.gongrab.menu.presentation.ui.MainAppScreen
+import com.gongrab.menu.presentation.ui.MobileAppScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             GoNGrabTheme {
-                MainAppScreen(repository = repository)
+                MobileAppScreen(repository = repository)
             }
         }
     }

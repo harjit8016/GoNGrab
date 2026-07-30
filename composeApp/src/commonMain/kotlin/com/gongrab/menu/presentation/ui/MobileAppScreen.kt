@@ -38,6 +38,7 @@ import com.gongrab.menu.presentation.theme.LeafGreen
 import com.gongrab.menu.presentation.theme.TextMuted
 import com.gongrab.menu.presentation.ui.components.AnimatedSvgPickerModal
 import com.gongrab.menu.presentation.ui.components.AnimatedSvgView
+import com.gongrab.menu.presentation.ui.components.DEFAULT_ANIMATED_PRESETS
 import kotlinx.coroutines.launch
 
 enum class MobileNavTab { ITEMS, CATEGORIES, BRANCHES }
@@ -302,15 +303,15 @@ fun MobileItemsView(
             items(categories) { cat ->
                 val isSelected = selectedCategoryId == cat.id
                 val count = items.count { it.categoryId == cat.id }
-                val hasSvg = cat.animatedSvg.isNotBlank()
+                val svgContent = getCategorySvgContent(cat, animatedSvgPack)
 
                 FilterChip(
                     selected = isSelected,
                     onClick = { onSelectCategory(cat.id) },
                     label = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (hasSvg) {
-                                AnimatedSvgView(svgContent = cat.animatedSvg, sizeDp = 22)
+                            if (svgContent.isNotBlank()) {
+                                AnimatedSvgView(svgContent = svgContent, sizeDp = 22)
                                 Spacer(modifier = Modifier.width(6.dp))
                             }
                             Text("${cat.name} ($count)")
@@ -533,7 +534,7 @@ fun MobileCategoriesView(
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(filteredCategories, key = { it.id }) { cat ->
-                val hasAnimatedSvg = cat.animatedSvg.isNotBlank()
+                val svgContent = getCategorySvgContent(cat, animatedSvgPack)
 
                 Card(
                     colors = CardDefaults.cardColors(containerColor = CardNavySurface),
@@ -556,8 +557,8 @@ fun MobileCategoriesView(
                             modifier = Modifier.weight(1f),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (hasAnimatedSvg) {
-                                AnimatedSvgView(svgContent = cat.animatedSvg, sizeDp = 44)
+                            if (svgContent.isNotBlank()) {
+                                AnimatedSvgView(svgContent = svgContent, sizeDp = 44)
                                 Spacer(modifier = Modifier.width(12.dp))
                             }
 
@@ -1106,4 +1107,22 @@ fun MobileDuplicateBranchDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
     )
+}
+
+fun getCategorySvgContent(cat: Category, pack: List<AnimatedSvgItem>): String {
+    if (cat.animatedSvg.isNotBlank()) return cat.animatedSvg
+
+    val catNameLower = cat.name.lowercase().trim()
+
+    val packMatch = pack.find { item ->
+        val itemNameLower = item.name.lowercase()
+        itemNameLower.contains(catNameLower) || catNameLower.contains(itemNameLower.replace("animated", "").trim())
+    }
+    if (packMatch != null && packMatch.svgContent.isNotBlank()) return packMatch.svgContent
+
+    val presetMatch = DEFAULT_ANIMATED_PRESETS.find { preset ->
+        val presetNameLower = preset.name.lowercase()
+        presetNameLower.contains(catNameLower) || catNameLower.contains(presetNameLower.replace("animated", "").trim())
+    }
+    return presetMatch?.svgContent ?: ""
 }

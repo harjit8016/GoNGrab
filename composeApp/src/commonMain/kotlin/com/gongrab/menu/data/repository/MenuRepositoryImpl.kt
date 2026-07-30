@@ -241,7 +241,7 @@ class MenuRepositoryImpl(
     }
 
     private fun getSeedFallbackData(): Pair<List<Category>, List<MenuItem>> {
-        val cats = listOf(
+        val baseCats = listOf(
             Category("shake", "Shake", 1),
             Category("mojito", "Mojito", 2),
             Category("smoothies", "Smoothies", 3),
@@ -264,6 +264,13 @@ class MenuRepositoryImpl(
             Category("nachos", "Nachos", 20),
             Category("add_ons", "Add-ons", 21)
         )
+
+        val cats = baseCats.map { cat ->
+            val svg = com.gongrab.menu.presentation.ui.components.DEFAULT_ANIMATED_PRESETS.find { preset ->
+                preset.name.lowercase().contains(cat.name.lowercase()) || cat.name.lowercase().contains(preset.name.lowercase().replace("animated", "").trim())
+            }?.svgContent ?: ""
+            cat.copy(animatedSvg = svg)
+        }
 
         val items = listOf(
             MenuItem("shk_1", "Chocolate Shake", "shake", "Shake", 140.0),
