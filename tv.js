@@ -220,7 +220,6 @@ function switchBranch() {
 
 // Real-Time Live Firestore DB Listener for Selected Branch
 function initLiveDbListener() {
-  renderSwitchBranchButton();
 
   try {
     if (typeof firebase !== 'undefined') {
@@ -284,21 +283,7 @@ function initLiveDbListener() {
   }
 }
 
-function renderSwitchBranchButton() {
-  let btn = document.getElementById('switch-branch-btn');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'switch-branch-btn';
-    btn.className = 'switch-branch-btn';
-    btn.setAttribute('tabindex', '0');
-    btn.innerHTML = '⚙️ Change Branch';
-    btn.onclick = switchBranch;
-    btn.onkeydown = (e) => {
-      if (e.key === 'Enter' || e.key === ' ') switchBranch();
-    };
-    document.body.appendChild(btn);
-  }
-}
+
 
 async function fetchTvMenuFallback() {
   try {
@@ -398,24 +383,96 @@ function toggleFullscreen(e) {
   }
 }
 
-// Double-click anywhere to enter fullscreen (ESC to exit)
-document.addEventListener('dblclick', (e) => {
-  const doc = document;
-  const isFS = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
-  if (!isFS) {
-    // Only enter — never exit on dblclick (ESC exits)
-    const docEl = doc.documentElement;
-    if (docEl.requestFullscreen) {
-      docEl.requestFullscreen().catch(err => console.warn('Fullscreen:', err));
-    } else if (docEl.webkitRequestFullscreen) {
-      docEl.webkitRequestFullscreen();
-    } else if (docEl.mozRequestFullScreen) {
-      docEl.mozRequestFullScreen();
-    } else if (docEl.msRequestFullscreen) {
-      docEl.msRequestFullscreen();
-    }
+// ─────────────────────────────────────────────────────────────────────────────
+// Unified Double-Tap / Double-Click → Fullscreen
+//
+// Why pointerdown instead of dblclick:
+//   • dblclick does NOT reliably fire on touch screens (Android TV, tablets).
+//   • Touch devices emit: touchstart → touchend → click (×2) but NOT dblclick.
+//   • pointerdown fires for BOTH mouse buttons AND touch/stylus points,
+//     giving us a single unified handler that works everywhere.
+//
+// Registered at DOMContentLoaded so document.body is available for feedback.
+// ─────────────────────────────────────────────────────────────────────────────
+function setupDoubleTapFullscreen() {
+  const DOUBLE_TAP_MS = 400;  // max ms between two taps
+  const DOUBLE_TAP_PX = 60;   // max pixel drift between two taps
+
+  let lastTapTime = 0;
+  let lastTapX = 0;
+  let lastTapY = 0;
+
+  // Visual ripple so user can see the tap was detected
+  function showTapRipple(x, y, isDoubleTap) {
+    const ripple = document.createElement('div');
+    ripple.style.cssText = [
+      'position:fixed',
+      `left:${x - 30}px`,
+      `top:${y - 30}px`,
+      'width:60px',
+      'height:60px',
+      'border-radius:50%',
+      `border:3px solid ${isDoubleTap ? '#9ec956' : 'rgba(255,255,255,0.3)'}`,
+      `background:${isDoubleTap ? 'rgba(158,201,86,0.2)' : 'transparent'}`,
+      'pointer-events:none',
+      'z-index:99999',
+      'animation:tapRippleAnim 0.5s ease-out forwards',
+    ].join(';');
+    document.body.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
   }
-});
+
+  // Inject ripple keyframe once
+  if (!document.getElementById('tap-ripple-style')) {
+    const style = document.createElement('style');
+    style.id = 'tap-ripple-style';
+    style.textContent = `
+      @keyframes tapRippleAnim {
+        0%   { transform: scale(0.5); opacity: 1; }
+        100% { transform: scale(2.5); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.addEventListener('pointerdown', (e) => {
+    // Ignore right-clicks (button 2)
+    if (e.button === 2) return;
+
+    const now = Date.now();
+    const dx = Math.abs(e.clientX - lastTapX);
+    const dy = Math.abs(e.clientY - lastTapY);
+    const dt = now - lastTapTime;
+
+    if (dt < DOUBLE_TAP_MS && dx < DOUBLE_TAP_PX && dy < DOUBLE_TAP_PX) {
+      // ── Confirmed double-tap ──
+      console.log('[TV] Double-tap detected! Requesting fullscreen...');
+
+      // Prevent the second pointer event from firing click on a branch card
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      // Reset so a third tap doesn't chain as another double-tap
+      lastTapTime = 0;
+
+      showTapRipple(e.clientX, e.clientY, true);
+      toggleFullscreen(e);
+    } else {
+      // First tap — record it
+      console.log('[TV] Single tap recorded, waiting for double-tap...');
+      lastTapTime = now;
+      lastTapX = e.clientX;
+      lastTapY = e.clientY;
+      showTapRipple(e.clientX, e.clientY, false);
+    }
+  }, { capture: true }); // capture phase: intercept before any child click handlers
+
+  console.log('[TV] Double-tap fullscreen listener ready.');
+}
+
+// Script runs at bottom of <body>, so DOM is already ready — call directly.
+setupDoubleTapFullscreen();
+
 
 function packCategoriesIntoColumns(categoryGroups, numCols = 5) {
   const categories = Object.keys(categoryGroups);
