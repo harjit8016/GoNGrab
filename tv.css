@@ -28,6 +28,7 @@ html, body {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+  touch-action: none; /* Prevents browser double-tap-to-zoom from swallowing events */
 }
 
 /* Full Screen TV Container - 100% Screen Height & Width Usage */

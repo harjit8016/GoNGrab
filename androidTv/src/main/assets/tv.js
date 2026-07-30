@@ -14,89 +14,17 @@ const firebaseConfig = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  renderFullscreenButton();
-
   // ALWAYS show Branch Selection Screen on startup!
   showBranchSelectionScreen();
-
-  // Fullscreen trigger on first interaction
-  const triggerAutoFs = () => {
-    enterFullscreen();
-    document.removeEventListener('click', triggerAutoFs);
-    document.removeEventListener('touchstart', triggerAutoFs);
-    document.removeEventListener('keydown', triggerAutoFs);
-  };
-
-  document.addEventListener('click', triggerAutoFs);
-  document.addEventListener('touchstart', triggerAutoFs);
-  document.addEventListener('keydown', triggerAutoFs);
-});
-
-// Double-click toggle full screen (window + document + body)
-['dblclick', 'ondblclick'].forEach(evt => {
-  window.addEventListener(evt, () => toggleFullscreen(), true);
-  document.addEventListener(evt, () => toggleFullscreen(), true);
 });
 
 // 'F' key or 'F11' key to toggle fullscreen
 document.addEventListener('keydown', (e) => {
   if (e.key === 'f' || e.key === 'F' || e.key === 'F11') {
     e.preventDefault();
-    toggleFullscreen();
+    toggleFullscreen(e);
   }
 });
-
-function toggleFullscreen() {
-  const elem = document.documentElement;
-  if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch((err) => console.warn('FS request notice:', err));
-    } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen().catch((err) => console.warn('FS request notice:', err));
-    } else if (elem.mozRequestFullScreen) {
-      elem.mozRequestFullScreen().catch((err) => console.warn('FS request notice:', err));
-    } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen().catch((err) => console.warn('FS request notice:', err));
-    }
-  } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen().catch(() => {});
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen().catch(() => {});
-    } else if (document.mozCancelFullScreen) {
-      document.mozCancelFullScreen().catch(() => {});
-    } else if (document.msExitFullscreen) {
-      document.msExitFullscreen().catch(() => {});
-    }
-  }
-}
-
-function enterFullscreen() {
-  const elem = document.documentElement;
-  if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch(() => {});
-    } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen().catch(() => {});
-    }
-  }
-}
-
-function renderFullscreenButton() {
-  let btn = document.getElementById('fullscreen-toggle-btn');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'fullscreen-toggle-btn';
-    btn.className = 'fullscreen-toggle-btn';
-    btn.setAttribute('tabindex', '-1');
-    btn.innerHTML = '⛶ Fullscreen';
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      toggleFullscreen();
-    };
-    document.body.appendChild(btn);
-  }
-}
 
 // Remote-Friendly First Page Branch Selection Screen (Big Beautiful Centered Cards)
 function showBranchSelectionScreen() {
@@ -292,7 +220,6 @@ function switchBranch() {
 
 // Real-Time Live Firestore DB Listener for Selected Branch
 function initLiveDbListener() {
-  renderSwitchBranchButton();
 
   try {
     if (typeof firebase !== 'undefined') {
@@ -356,21 +283,7 @@ function initLiveDbListener() {
   }
 }
 
-function renderSwitchBranchButton() {
-  let btn = document.getElementById('switch-branch-btn');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'switch-branch-btn';
-    btn.className = 'switch-branch-btn';
-    btn.setAttribute('tabindex', '0');
-    btn.innerHTML = '⚙️ Change Branch';
-    btn.onclick = switchBranch;
-    btn.onkeydown = (e) => {
-      if (e.key === 'Enter' || e.key === ' ') switchBranch();
-    };
-    document.body.appendChild(btn);
-  }
-}
+
 
 async function fetchTvMenuFallback() {
   try {
@@ -470,14 +383,95 @@ function toggleFullscreen(e) {
   }
 }
 
-document.addEventListener('dblclick', toggleFullscreen, { passive: false });
-window.addEventListener('dblclick', toggleFullscreen, { passive: false });
+// ─────────────────────────────────────────────────────────────────────────────
+// Unified Double-Tap / Double-Click → Fullscreen
+//
+// Why pointerup instead of pointerdown or dblclick:
+//   • dblclick does NOT reliably fire on touch screens (Android TV, tablets).
+//   • pointerdown + preventDefault() cancels the user gesture token needed for requestFullscreen in modern browsers!
+//   • pointerup naturally completes the tap and is fully trusted for fullscreen requests.
+//
+// Registered at DOMContentLoaded so document.body is available for feedback.
+// ─────────────────────────────────────────────────────────────────────────────
+function setupDoubleTapFullscreen() {
+  const DOUBLE_TAP_MS = 400;  // max ms between two taps
+  const DOUBLE_TAP_PX = 60;   // max pixel drift between two taps
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'f' || e.key === 'F') {
-    toggleFullscreen(e);
+  let lastTapTime = 0;
+  let lastTapX = 0;
+  let lastTapY = 0;
+
+  // Visual ripple so user can see the tap was detected
+  function showTapRipple(x, y, isDoubleTap) {
+    const ripple = document.createElement('div');
+    ripple.style.cssText = [
+      'position:fixed',
+      `left:${x - 30}px`,
+      `top:${y - 30}px`,
+      'width:60px',
+      'height:60px',
+      'border-radius:50%',
+      `border:3px solid ${isDoubleTap ? '#9ec956' : 'rgba(255,255,255,0.3)'}`,
+      `background:${isDoubleTap ? 'rgba(158,201,86,0.2)' : 'transparent'}`,
+      'pointer-events:none',
+      'z-index:99999',
+      'animation:tapRippleAnim 0.5s ease-out forwards',
+    ].join(';');
+    document.body.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
   }
-});
+
+  // Inject ripple keyframe once
+  if (!document.getElementById('tap-ripple-style')) {
+    const style = document.createElement('style');
+    style.id = 'tap-ripple-style';
+    style.textContent = `
+      @keyframes tapRippleAnim {
+        0%   { transform: scale(0.5); opacity: 1; }
+        100% { transform: scale(2.5); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.addEventListener('pointerup', (e) => {
+    // Ignore right-clicks (button 2)
+    if (e.button === 2) return;
+
+    const now = Date.now();
+    const dx = Math.abs(e.clientX - lastTapX);
+    const dy = Math.abs(e.clientY - lastTapY);
+    const dt = now - lastTapTime;
+
+    if (dt < DOUBLE_TAP_MS && dx < DOUBLE_TAP_PX && dy < DOUBLE_TAP_PX) {
+      // ── Confirmed double-tap ──
+      console.log('[TV] Double-tap detected! Requesting fullscreen...');
+
+      // Prevent the second pointer event from firing click on a branch card
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      // Reset so a third tap doesn't chain as another double-tap
+      lastTapTime = 0;
+
+      showTapRipple(e.clientX, e.clientY, true);
+      toggleFullscreen(e);
+    } else {
+      // First tap — record it
+      console.log('[TV] Single tap recorded, waiting for double-tap...');
+      lastTapTime = now;
+      lastTapX = e.clientX;
+      lastTapY = e.clientY;
+      showTapRipple(e.clientX, e.clientY, false);
+    }
+  }, { capture: true }); // capture phase: intercept before any child click handlers
+
+  console.log('[TV] Double-tap fullscreen listener ready.');
+}
+
+// Script runs at bottom of <body>, so DOM is already ready — call directly.
+setupDoubleTapFullscreen();
+
 
 function packCategoriesIntoColumns(categoryGroups, numCols = 5) {
   const categories = Object.keys(categoryGroups);

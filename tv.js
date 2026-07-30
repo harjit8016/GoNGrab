@@ -386,11 +386,10 @@ function toggleFullscreen(e) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Unified Double-Tap / Double-Click → Fullscreen
 //
-// Why pointerdown instead of dblclick:
+// Why pointerup instead of pointerdown or dblclick:
 //   • dblclick does NOT reliably fire on touch screens (Android TV, tablets).
-//   • Touch devices emit: touchstart → touchend → click (×2) but NOT dblclick.
-//   • pointerdown fires for BOTH mouse buttons AND touch/stylus points,
-//     giving us a single unified handler that works everywhere.
+//   • pointerdown + preventDefault() cancels the user gesture token needed for requestFullscreen in modern browsers!
+//   • pointerup naturally completes the tap and is fully trusted for fullscreen requests.
 //
 // Registered at DOMContentLoaded so document.body is available for feedback.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -435,7 +434,8 @@ function setupDoubleTapFullscreen() {
     document.head.appendChild(style);
   }
 
-  document.addEventListener('pointerdown', (e) => {
+
+  document.addEventListener('click', (e) => {
     // Ignore right-clicks (button 2)
     if (e.button === 2) return;
 
