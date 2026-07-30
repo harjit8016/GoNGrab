@@ -17,3 +17,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "GoNGrabMenuManagement"
 include(":composeApp")
+include(":androidTv")
+
