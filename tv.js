@@ -14,6 +14,8 @@ const firebaseConfig = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  renderFullscreenButton();
+
   // ALWAYS show Branch Selection Screen on startup!
   showBranchSelectionScreen();
 
@@ -30,22 +32,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('keydown', triggerAutoFs);
 });
 
-// Double-click toggle full screen
-document.addEventListener('dblclick', (e) => {
-  toggleFullscreen();
+// Double-click toggle full screen (window + document + body)
+['dblclick', 'ondblclick'].forEach(evt => {
+  window.addEventListener(evt, () => toggleFullscreen(), true);
+  document.addEventListener(evt, () => toggleFullscreen(), true);
+});
+
+// 'F' key or 'F11' key to toggle fullscreen
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'f' || e.key === 'F' || e.key === 'F11') {
+    e.preventDefault();
+    toggleFullscreen();
+  }
 });
 
 function toggleFullscreen() {
   const elem = document.documentElement;
   if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
     if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch(() => {});
+      elem.requestFullscreen().catch((err) => console.warn('FS request notice:', err));
     } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen().catch(() => {});
+      elem.webkitRequestFullscreen().catch((err) => console.warn('FS request notice:', err));
     } else if (elem.mozRequestFullScreen) {
-      elem.mozRequestFullScreen().catch(() => {});
+      elem.mozRequestFullScreen().catch((err) => console.warn('FS request notice:', err));
     } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen().catch(() => {});
+      elem.msRequestFullscreen().catch((err) => console.warn('FS request notice:', err));
     }
   } else {
     if (document.exitFullscreen) {
@@ -68,6 +79,22 @@ function enterFullscreen() {
     } else if (elem.webkitRequestFullscreen) {
       elem.webkitRequestFullscreen().catch(() => {});
     }
+  }
+}
+
+function renderFullscreenButton() {
+  let btn = document.getElementById('fullscreen-toggle-btn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'fullscreen-toggle-btn';
+    btn.className = 'fullscreen-toggle-btn';
+    btn.setAttribute('tabindex', '-1');
+    btn.innerHTML = '⛶ Fullscreen';
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      toggleFullscreen();
+    };
+    document.body.appendChild(btn);
   }
 }
 
