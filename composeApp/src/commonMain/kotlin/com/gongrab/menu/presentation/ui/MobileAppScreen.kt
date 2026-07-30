@@ -37,6 +37,7 @@ import com.gongrab.menu.presentation.theme.DarkNavyBg
 import com.gongrab.menu.presentation.theme.LeafGreen
 import com.gongrab.menu.presentation.theme.TextMuted
 import com.gongrab.menu.presentation.ui.components.AnimatedSvgPickerModal
+import com.gongrab.menu.presentation.ui.components.AnimatedSvgView
 import kotlinx.coroutines.launch
 
 enum class MobileNavTab { ITEMS, CATEGORIES, BRANCHES }
@@ -301,14 +302,20 @@ fun MobileItemsView(
             items(categories) { cat ->
                 val isSelected = selectedCategoryId == cat.id
                 val count = items.count { it.categoryId == cat.id }
-                val icon = getCategoryAnimatedIcon(cat.name)
-                val displayName = if (cat.name.contains(icon)) cat.name else "$icon ${cat.name}"
                 val hasSvg = cat.animatedSvg.isNotBlank()
 
                 FilterChip(
                     selected = isSelected,
                     onClick = { onSelectCategory(cat.id) },
-                    label = { Text("${if (hasSvg) "🎬 " else ""}$displayName ($count)") },
+                    label = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (hasSvg) {
+                                AnimatedSvgView(svgContent = cat.animatedSvg, sizeDp = 22)
+                                Spacer(modifier = Modifier.width(6.dp))
+                            }
+                            Text("${cat.name} ($count)")
+                        }
+                    },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = LeafGreen,
                         selectedLabelColor = Color(0xFF0A1017),
@@ -545,30 +552,19 @@ fun MobileCategoriesView(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                val icon = getCategoryAnimatedIcon(cat.name)
-                                val displayName = if (cat.name.contains(icon)) cat.name else "$icon ${cat.name}"
-
-                                Text(displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
-                                if (hasAnimatedSvg) {
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = LeafGreen.copy(alpha = 0.2f),
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, LeafGreen.copy(alpha = 0.5f))
-                                    ) {
-                                        Text(
-                                            text = "🎬 ANIMATED SVG",
-                                            color = LeafGreen,
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (hasAnimatedSvg) {
+                                AnimatedSvgView(svgContent = cat.animatedSvg, sizeDp = 44)
+                                Spacer(modifier = Modifier.width(12.dp))
                             }
-                            Text("Display Order: ${cat.displayOrder}", color = TextMuted, fontSize = 12.sp)
+
+                            Column {
+                                Text(cat.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                                Text("Display Order: ${cat.displayOrder}", color = TextMuted, fontSize = 12.sp)
+                            }
                         }
 
                         IconButton(
@@ -1110,32 +1106,4 @@ fun MobileDuplicateBranchDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
     )
-}
-
-fun getCategoryAnimatedIcon(name: String): String {
-    val lower = name.lowercase()
-    return when {
-        lower.contains("shake") -> "🥤"
-        lower.contains("mojito") -> "🍹"
-        lower.contains("pizza") -> "🍕"
-        lower.contains("waffle") -> "🧇"
-        lower.contains("smoothie") -> "🍓"
-        lower.contains("ice tea") || lower.contains("iced tea") -> "🧊"
-        lower.contains("pasta") -> "🍝"
-        lower.contains("maggie") || lower.contains("noodle") -> "🍜"
-        lower.contains("dessert") || lower.contains("ice cream") -> "🍨"
-        lower.contains("sandwich") && !lower.contains("sub") -> "🥪"
-        lower.contains("sub") -> "🥖"
-        lower.contains("garlic") || lower.contains("bread") -> "🍞"
-        lower.contains("taco") -> "🌮"
-        lower.contains("hot dog") || lower.contains("hotdog") -> "🌭"
-        lower.contains("cold coffee") -> "🧋"
-        lower.contains("coffee") || lower.contains("tea") -> "☕"
-        lower.contains("non-veg") || lower.contains("chicken") || lower.contains("snack") -> "🍗"
-        lower.contains("pastry") || lower.contains("cake") -> "🍰"
-        lower.contains("special") -> "🌟"
-        lower.contains("burger") -> "🍔"
-        lower.contains("add") -> "➕"
-        else -> "🍽️"
-    }
 }
