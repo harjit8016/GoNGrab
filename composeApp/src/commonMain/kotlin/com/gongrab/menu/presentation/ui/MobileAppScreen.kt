@@ -522,53 +522,70 @@ fun MobileCategoriesView(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(filteredCategories, key = { it.id }) { cat ->
                 val hasAnimatedSvg = cat.animatedSvg.isNotBlank()
+                var showMenu by remember { mutableStateOf(false) }
 
                 Card(
                     colors = CardDefaults.cardColors(containerColor = CardNavySurface),
                     modifier = Modifier.fillMaxWidth().border(1.dp, BorderGreen, RoundedCornerShape(12.dp))
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(cat.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LeafGreen)
-                                Text("ID: ${cat.id} | Display Order: ${cat.displayOrder}", color = TextMuted, fontSize = 12.sp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(cat.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                                if (hasAnimatedSvg) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = LeafGreen.copy(alpha = 0.2f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, LeafGreen.copy(alpha = 0.5f))
+                                    ) {
+                                        Text(
+                                            text = "🎬 SVG",
+                                            color = LeafGreen,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
                             }
-
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (hasAnimatedSvg) LeafGreen.copy(alpha = 0.2f) else Color(0xFF1E293B),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, if (hasAnimatedSvg) LeafGreen else BorderGreen)
-                            ) {
-                                Text(
-                                    text = if (hasAnimatedSvg) "🎬 SVG ACTIVE" else "NO SVG",
-                                    color = if (hasAnimatedSvg) LeafGreen else TextMuted,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
+                            Text("Display Order: ${cat.displayOrder}", color = TextMuted, fontSize = 12.sp)
                         }
 
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF334155))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            TextButton(onClick = { editingCategory = cat; showCategoryDialog = true }) {
-                                Text("Edit", color = LeafGreen, fontWeight = FontWeight.Bold)
+                        Box {
+                            IconButton(onClick = { showMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = Color.White)
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            TextButton(onClick = { coroutineScope.launch { repository.deleteCategory(cat.id) } }) {
-                                Text("Delete", color = Color(0xFFEF4444))
+
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false },
+                                modifier = Modifier.background(CardNavySurface)
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("✏️ Edit Category", color = Color.White, fontWeight = FontWeight.Bold) },
+                                    onClick = {
+                                        showMenu = false
+                                        editingCategory = cat
+                                        showCategoryDialog = true
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("🗑️ Delete Category", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold) },
+                                    onClick = {
+                                        showMenu = false
+                                        coroutineScope.launch { repository.deleteCategory(cat.id) }
+                                    }
+                                )
                             }
                         }
                     }
