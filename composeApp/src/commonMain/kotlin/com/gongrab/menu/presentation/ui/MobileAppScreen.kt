@@ -78,35 +78,39 @@ fun MobileAppScreen(repository: MenuRepository) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (activeTab == MobileNavTab.ITEMS) {
-                            IconButton(onClick = { showBranchDrawer = true }) {
-                                Icon(Icons.Default.Menu, contentDescription = "Branch Menu", tint = LeafGreen)
-                            }
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .padding(start = 6.dp, end = 8.dp)
-                                    .size(10.dp)
-                                    .background(LeafGreen, CircleShape)
-                            )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable(enabled = activeTab == MobileNavTab.ITEMS) {
+                            showBranchDrawer = true
                         }
-
-                        Column(
-                            modifier = Modifier.clickable(enabled = activeTab == MobileNavTab.ITEMS) {
-                                showBranchDrawer = true
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .background(LeafGreen, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = when (activeTab) {
+                                        MobileNavTab.ITEMS -> currentBranchName
+                                        MobileNavTab.CATEGORIES -> "📁 Categories (${categories.size})"
+                                        MobileNavTab.BRANCHES -> "🏢 Branches (${branches.size})"
+                                    },
+                                    color = Color.White,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (activeTab == MobileNavTab.ITEMS) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = "Dropdown",
+                                        tint = LeafGreen
+                                    )
+                                }
                             }
-                        ) {
-                            Text(
-                                text = when (activeTab) {
-                                    MobileNavTab.ITEMS -> currentBranchName
-                                    MobileNavTab.CATEGORIES -> "📁 Categories (${categories.size})"
-                                    MobileNavTab.BRANCHES -> "🏢 Branches (${branches.size})"
-                                },
-                                color = Color.White,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
                             Text(
                                 text = "Go N Grab 24/7",
                                 color = TextMuted,
