@@ -301,12 +301,14 @@ fun MobileItemsView(
             items(categories) { cat ->
                 val isSelected = selectedCategoryId == cat.id
                 val count = items.count { it.categoryId == cat.id }
+                val icon = getCategoryAnimatedIcon(cat.name)
+                val displayName = if (cat.name.contains(icon)) cat.name else "$icon ${cat.name}"
                 val hasSvg = cat.animatedSvg.isNotBlank()
 
                 FilterChip(
                     selected = isSelected,
                     onClick = { onSelectCategory(cat.id) },
-                    label = { Text("${if (hasSvg) "🎬 " else ""}${cat.name} ($count)") },
+                    label = { Text("${if (hasSvg) "🎬 " else ""}$displayName ($count)") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = LeafGreen,
                         selectedLabelColor = Color(0xFF0A1017),
@@ -545,7 +547,10 @@ fun MobileCategoriesView(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(cat.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                                val icon = getCategoryAnimatedIcon(cat.name)
+                                val displayName = if (cat.name.contains(icon)) cat.name else "$icon ${cat.name}"
+
+                                Text(displayName, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
                                 if (hasAnimatedSvg) {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Surface(
@@ -554,7 +559,7 @@ fun MobileCategoriesView(
                                         border = androidx.compose.foundation.BorderStroke(1.dp, LeafGreen.copy(alpha = 0.5f))
                                     ) {
                                         Text(
-                                            text = "🎬 SVG",
+                                            text = "🎬 ANIMATED SVG",
                                             color = LeafGreen,
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
@@ -1105,4 +1110,32 @@ fun MobileDuplicateBranchDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
     )
+}
+
+fun getCategoryAnimatedIcon(name: String): String {
+    val lower = name.lowercase()
+    return when {
+        lower.contains("shake") -> "🥤"
+        lower.contains("mojito") -> "🍹"
+        lower.contains("pizza") -> "🍕"
+        lower.contains("waffle") -> "🧇"
+        lower.contains("smoothie") -> "🍓"
+        lower.contains("ice tea") || lower.contains("iced tea") -> "🧊"
+        lower.contains("pasta") -> "🍝"
+        lower.contains("maggie") || lower.contains("noodle") -> "🍜"
+        lower.contains("dessert") || lower.contains("ice cream") -> "🍨"
+        lower.contains("sandwich") && !lower.contains("sub") -> "🥪"
+        lower.contains("sub") -> "🥖"
+        lower.contains("garlic") || lower.contains("bread") -> "🍞"
+        lower.contains("taco") -> "🌮"
+        lower.contains("hot dog") || lower.contains("hotdog") -> "🌭"
+        lower.contains("cold coffee") -> "🧋"
+        lower.contains("coffee") || lower.contains("tea") -> "☕"
+        lower.contains("non-veg") || lower.contains("chicken") || lower.contains("snack") -> "🍗"
+        lower.contains("pastry") || lower.contains("cake") -> "🍰"
+        lower.contains("special") -> "🌟"
+        lower.contains("burger") -> "🍔"
+        lower.contains("add") -> "➕"
+        else -> "🍽️"
+    }
 }
