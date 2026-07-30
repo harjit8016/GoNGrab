@@ -1,5 +1,7 @@
-let currentBranchId = getQueryParam('branch') || 'branch_1';
+let urlBranchParam = getQueryParam('branch');
+let currentBranchId = urlBranchParam || localStorage.getItem('selectedBranchId') || null;
 let menuData = [];
+let itemsUnsubscribe = null;
 
 function getQueryParam(param) {
   const urlParams = new URLSearchParams(window.location.search);
@@ -12,7 +14,15 @@ const firebaseConfig = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  initLiveDbListener();
+  if (urlBranchParam) {
+    localStorage.setItem('selectedBranchId', urlBranchParam);
+  }
+
+  if (!currentBranchId) {
+    showBranchSelectionScreen();
+  } else {
+    initLiveDbListener();
+  }
 
   // Fullscreen trigger on first interaction
   const triggerAutoFs = () => {
@@ -27,8 +37,118 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('keydown', triggerAutoFs);
 });
 
-// Real-Time Live Firestore DB Listener
+// Remote-Friendly First Page Branch Selection Screen
+function showBranchSelectionScreen() {
+  let overlay = document.getElementById('branch-select-modal');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'branch-select-modal';
+    overlay.className = 'branch-modal-overlay';
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = `
+    <div class="branch-modal-title">GO N GRAB 24 SEVEN</div>
+    <div class="branch-modal-subtitle">Select Restaurant Branch to Display Menu</div>
+    <div class="branch-cards-grid" id="branch-cards-container">
+      <div style="color: var(--text-muted); font-size: 1.2rem;">Loading branches from database...</div>
+    </div>
+  `;
+
+  overlay.style.display = 'flex';
+
+  fetchAndRenderBranches();
+}
+
+async function fetchAndRenderBranches() {
+  const container = document.getElementById('branch-cards-container');
+  if (!container) return;
+
+  try {
+    let branches = [];
+    if (typeof firebase !== 'undefined') {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+      const snap = await db.collection('branches').get();
+      snap.forEach(doc => branches.push({ id: doc.id, ...doc.data() }));
+    }
+
+    if (branches.length === 0) {
+      const res = await fetch('/api/branches');
+      branches = await res.json();
+    }
+
+    if (!branches || branches.length === 0) {
+      branches = [
+        { id: 'branch_1', name: 'Branch 1', address: 'Main Street Display' },
+        { id: 'branch_2', name: 'Branch 2', address: 'Downtown Center' }
+      ];
+    }
+
+    container.innerHTML = '';
+    branches.forEach((b, idx) => {
+      const card = document.createElement('div');
+      card.className = 'branch-card';
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'button');
+      card.setAttribute('data-branch-id', b.id);
+
+      card.innerHTML = `
+        <div class="branch-card-title">📍 ${b.name || b.id}</div>
+        <div class="branch-card-address">${b.address || 'Select to show live TV menu board'}</div>
+      `;
+
+      card.addEventListener('click', () => selectBranch(b.id));
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ' || e.keyCode === 13) {
+          selectBranch(b.id);
+        }
+      });
+
+      container.appendChild(card);
+    });
+
+    // Auto-focus first card for TV Remote D-Pad control
+    const firstCard = container.querySelector('.branch-card');
+    if (firstCard) firstCard.focus();
+
+  } catch (err) {
+    console.error('Error fetching branches:', err);
+    container.innerHTML = `
+      <div class="branch-card" tabindex="0" onclick="selectBranch('branch_1')">
+        <div class="branch-card-title">📍 Branch 1</div>
+        <div class="branch-card-address">Main Branch TV Board</div>
+      </div>
+      <div class="branch-card" tabindex="0" onclick="selectBranch('branch_2')">
+        <div class="branch-card-title">📍 Branch 2</div>
+        <div class="branch-card-address">Secondary Branch TV Board</div>
+      </div>
+    `;
+  }
+}
+
+function selectBranch(branchId) {
+  currentBranchId = branchId;
+  localStorage.setItem('selectedBranchId', branchId);
+
+  const overlay = document.getElementById('branch-select-modal');
+  if (overlay) overlay.style.display = 'none';
+
+  initLiveDbListener();
+}
+
+function switchBranch() {
+  if (itemsUnsubscribe) {
+    itemsUnsubscribe();
+    itemsUnsubscribe = null;
+  }
+  showBranchSelectionScreen();
+}
+
+// Real-Time Live Firestore DB Listener for Selected Branch
 function initLiveDbListener() {
+  renderSwitchBranchButton();
+
   try {
     if (typeof firebase !== 'undefined') {
       if (!firebase.apps.length) {
@@ -48,8 +168,10 @@ function initLiveDbListener() {
         if (menuData && menuData.length > 0) renderTvBoard();
       }, (err) => console.warn('Categories listener info:', err.message));
 
-      // Listen to master items collection in real-time
-      db.collection('items')
+      // Listen to master items collection in real-time for current branch
+      if (itemsUnsubscribe) itemsUnsubscribe();
+
+      itemsUnsubscribe = db.collection('items')
         .onSnapshot((snapshot) => {
           if (!snapshot.empty) {
             const liveItems = [];
@@ -86,6 +208,22 @@ function initLiveDbListener() {
   } catch (err) {
     console.warn('Live DB init error, using fallback:', err);
     fetchTvMenuFallback();
+  }
+}
+
+function renderSwitchBranchButton() {
+  let btn = document.getElementById('switch-branch-btn');
+  if (!btn) {
+    btn = document.createElement('button');
+    btn.id = 'switch-branch-btn';
+    btn.className = 'switch-branch-btn';
+    btn.setAttribute('tabindex', '0');
+    btn.innerHTML = '⚙️ Change Branch';
+    btn.onclick = switchBranch;
+    btn.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') switchBranch();
+    };
+    document.body.appendChild(btn);
   }
 }
 

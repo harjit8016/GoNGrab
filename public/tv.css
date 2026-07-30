@@ -136,3 +136,99 @@ html, body {
   color: var(--logo-green);
   white-space: nowrap;
 }
+
+/* Branch Selector Modal Overlay */
+.branch-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 16, 23, 0.96);
+  backdrop-filter: blur(12px);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2vw;
+}
+
+.branch-modal-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--logo-green);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.branch-modal-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  margin-bottom: 2.5rem;
+}
+
+.branch-cards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.8rem;
+  justify-content: center;
+  max-width: 900px;
+}
+
+.branch-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid var(--line-divider);
+  border-radius: 16px;
+  padding: 1.8rem 2.5rem;
+  min-width: 240px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+
+.branch-card:hover, .branch-card:focus {
+  background: rgba(158, 201, 86, 0.15);
+  border-color: var(--logo-green);
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: 0 10px 30px rgba(158, 201, 86, 0.3);
+  outline: none;
+}
+
+.branch-card-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-white);
+  margin-bottom: 0.4rem;
+}
+
+.branch-card-address {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+/* Floating Switch Branch Button */
+.switch-branch-btn {
+  position: fixed;
+  bottom: 12px;
+  right: 16px;
+  background: rgba(10, 16, 23, 0.7);
+  border: 1px solid var(--line-divider);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 1000;
+  opacity: 0.3;
+  transition: opacity 0.2s ease;
+}
+
+.switch-branch-btn:hover {
+  opacity: 1;
+  color: var(--logo-green);
+  border-color: var(--logo-green);
+}

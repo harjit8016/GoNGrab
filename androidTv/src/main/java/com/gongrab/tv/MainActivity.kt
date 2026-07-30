@@ -15,7 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
-    private val tvMenuUrl = "https://harjit8016.github.io/GoNGrab/tv.html?branch=branch_1"
+    private val tvMenuUrl = "https://harjit8016.github.io/GoNGrab/tv.html"
+
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
