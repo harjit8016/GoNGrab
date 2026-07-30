@@ -1,5 +1,6 @@
 package com.gongrab.menu.presentation.ui
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,23 +50,22 @@ fun MobileAppScreen(repository: MenuRepository) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearchExpanded by remember { mutableStateOf(false) }
 
+    var showBranchDrawer by remember { mutableStateOf(false) }
     var showAddItemSheet by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<MenuItem?>(null) }
     var showSvgPickerForItem by remember { mutableStateOf<MenuItem?>(null) }
 
-    // Filter items based on branch, category, and search query
+    // Resolve current branch name for top app bar header
+    val currentBranchName = when (selectedBranchId) {
+        "all" -> "🌐 All Branches"
+        else -> branches.find { it.id == selectedBranchId }?.name ?: "📍 Branch 1"
+    }
+
+    // Filter items based on category and search query (SHOW ALL ITEMS in management view)
     val filteredItems = items.filter { item ->
         val matchesCategory = selectedCategoryId == null || item.categoryId == selectedCategoryId
         val matchesSearch = searchQuery.isBlank() || item.name.contains(searchQuery, ignoreCase = true)
-        
-        val branchConfig = item.branches[selectedBranchId]
-        val isBranchAvailable = if (selectedBranchId == "all") {
-            true
-        } else {
-            branchConfig?.available ?: true
-        }
-
-        matchesCategory && matchesSearch && isBranchAvailable
+        matchesCategory && matchesSearch
     }.sortedBy { it.displayOrder }
 
     Scaffold(
@@ -74,14 +74,28 @@ fun MobileAppScreen(repository: MenuRepository) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(CardNavySurface)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Left Hamburger Button
+                    IconButton(onClick = { showBranchDrawer = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Select Branch Hamburger Menu",
+                            tint = LeafGreen,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    // Center Top Header: Selected Branch Name
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { showBranchDrawer = true }
+                    ) {
                         Box(
                             modifier = Modifier
                                 .size(10.dp)
@@ -89,17 +103,24 @@ fun MobileAppScreen(repository: MenuRepository) {
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Go N Grab 24/7",
+                            text = currentBranchName,
                             color = Color.White,
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Dropdown",
+                            tint = TextMuted
                         )
                     }
 
+                    // Right Search Button
                     IconButton(onClick = { isSearchExpanded = !isSearchExpanded }) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
+                            contentDescription = "Search Items",
                             tint = LeafGreen
                         )
                     }
@@ -128,39 +149,6 @@ fun MobileAppScreen(repository: MenuRepository) {
                         }
                     )
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Branch Selector Tabs
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val branchOptions = listOf("branch_1" to "📍 Branch 1", "branch_2" to "📍 Branch 2", "all" to "🌐 All")
-                    branchOptions.forEach { (id, label) ->
-                        val isSelected = selectedBranchId == id
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { selectedBranchId = id },
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) LeafGreen else Color(0xFF1E293B),
-                            border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, BorderGreen)
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = label,
-                                    color = if (isSelected) Color(0xFF0A1017) else Color.White,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-                }
             }
         },
         bottomBar = {
@@ -176,12 +164,20 @@ fun MobileAppScreen(repository: MenuRepository) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "${filteredItems.size} items",
-                        color = TextMuted,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Column {
+                        Text(
+                            text = "${filteredItems.size} items",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = currentBranchName,
+                            color = LeafGreen,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
 
                     FloatingActionButton(
                         onClick = { showAddItemSheet = true },
@@ -211,7 +207,7 @@ fun MobileAppScreen(repository: MenuRepository) {
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp, horizontal = 12.dp),
+                    .padding(vertical = 10.dp, horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
@@ -253,7 +249,7 @@ fun MobileAppScreen(repository: MenuRepository) {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No menu items found",
+                        text = "Loading items from database...",
                         color = TextMuted,
                         fontSize = 16.sp
                     )
@@ -261,7 +257,7 @@ fun MobileAppScreen(repository: MenuRepository) {
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(filteredItems, key = { it.id }) { item ->
@@ -287,6 +283,120 @@ fun MobileAppScreen(repository: MenuRepository) {
                 }
             }
         }
+    }
+
+    // Hamburger Branch Selection Modal Sheet
+    if (showBranchDrawer) {
+        AlertDialog(
+            onDismissRequest = { showBranchDrawer = false },
+            containerColor = CardNavySurface,
+            title = {
+                Text(
+                    text = "🏬 Select Restaurant Branch",
+                    color = LeafGreen,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text("Select branch to manage prices and menu availability:", color = TextMuted, fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    val allBranchesList = branches.ifEmpty {
+                        listOf(
+                            com.gongrab.menu.domain.model.Branch("branch_1", "Branch 1", "Main Branch Location"),
+                            com.gongrab.menu.domain.model.Branch("branch_2", "Branch 2", "Secondary Branch Location")
+                        )
+                    }
+
+                    allBranchesList.forEach { b ->
+                        val isSelected = selectedBranchId == b.id
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedBranchId = b.id
+                                    showBranchDrawer = false
+                                },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) LeafGreen.copy(alpha = 0.2f) else DarkNavyBg,
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (isSelected) LeafGreen else BorderGreen
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "📍 ${b.name}",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    )
+                                    if (b.address.isNotBlank()) {
+                                        Text(text = b.address, color = TextMuted, fontSize = 12.sp)
+                                    }
+                                }
+
+                                if (isSelected) {
+                                    Icon(Icons.Default.Check, contentDescription = "Selected", tint = LeafGreen)
+                                }
+                            }
+                        }
+                    }
+
+                    // All branches option
+                    val isAllSelected = selectedBranchId == "all"
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                selectedBranchId = "all"
+                                showBranchDrawer = false
+                            },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isAllSelected) LeafGreen.copy(alpha = 0.2f) else DarkNavyBg,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (isAllSelected) LeafGreen else BorderGreen
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "🌐 All Branches",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                            if (isAllSelected) {
+                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = LeafGreen)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showBranchDrawer = false }) {
+                    Text("CLOSE", color = TextMuted)
+                }
+            }
+        )
     }
 
     // Dialog for Add/Edit
@@ -440,6 +550,12 @@ fun MobileMenuItemCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Text(
+                    text = "Actions",
+                    color = TextMuted,
+                    fontSize = 12.sp
+                )
+
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     IconButton(onClick = onSvgClick) {
                         Icon(Icons.Default.Star, contentDescription = "SVG Icon", tint = LeafGreen)
