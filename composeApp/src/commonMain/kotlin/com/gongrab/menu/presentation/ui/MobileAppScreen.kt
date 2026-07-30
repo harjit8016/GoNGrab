@@ -273,7 +273,7 @@ fun MobileItemsView(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Horizontal Category Pill Carousel
+        // Horizontal Category Carousel with Animated SVG Badges
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
@@ -297,10 +297,12 @@ fun MobileItemsView(
             items(categories) { cat ->
                 val isSelected = selectedCategoryId == cat.id
                 val count = items.count { it.categoryId == cat.id }
+                val hasSvg = cat.animatedSvg.isNotBlank()
+
                 FilterChip(
                     selected = isSelected,
                     onClick = { onSelectCategory(cat.id) },
-                    label = { Text("${cat.name} ($count)") },
+                    label = { Text("${if (hasSvg) "🎬 " else ""}${cat.name} ($count)") },
                     colors = FilterChipDefaults.filterChipColors(
                         selectedContainerColor = LeafGreen,
                         selectedLabelColor = Color(0xFF0A1017),
@@ -481,7 +483,7 @@ fun MobileItemsView(
 }
 
 // =========================================================================
-// 2. MOBILE CATEGORIES MANAGEMENT VIEW
+// 2. MOBILE CATEGORIES MANAGEMENT VIEW (WITH ANIMATED SVG PICKER)
 // =========================================================================
 @Composable
 fun MobileCategoriesView(
@@ -491,8 +493,9 @@ fun MobileCategoriesView(
     repository: MenuRepository
 ) {
     val coroutineScope = rememberCoroutineScope()
-    var showDialog by remember { mutableStateOf(false) }
+    var showCategoryDialog by remember { mutableStateOf(false) }
     var editingCategory by remember { mutableStateOf<Category?>(null) }
+    var categoryForSvgPicker by remember { mutableStateOf<Category?>(null) }
 
     val filteredCategories = remember(categories, searchQuery) {
         if (searchQuery.isBlank()) categories
@@ -507,7 +510,7 @@ fun MobileCategoriesView(
         ) {
             Text("Categories List", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Button(
-                onClick = { editingCategory = null; showDialog = true },
+                onClick = { editingCategory = null; showCategoryDialog = true },
                 colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(18.dp))
@@ -518,28 +521,65 @@ fun MobileCategoriesView(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(filteredCategories, key = { it.id }) { cat ->
+                val hasAnimatedSvg = cat.animatedSvg.isNotBlank()
+
                 Card(
                     colors = CardDefaults.cardColors(containerColor = CardNavySurface),
                     modifier = Modifier.fillMaxWidth().border(1.dp, BorderGreen, RoundedCornerShape(12.dp))
                 ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp).fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(cat.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LeafGreen)
-                            Text("Display Order: ${cat.displayOrder}", color = TextMuted, fontSize = 12.sp)
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(cat.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LeafGreen)
+                                Text("ID: ${cat.id} | Display Order: ${cat.displayOrder}", color = TextMuted, fontSize = 12.sp)
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (hasAnimatedSvg) LeafGreen.copy(alpha = 0.2f) else Color(0xFF1E293B),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, if (hasAnimatedSvg) LeafGreen else BorderGreen)
+                            ) {
+                                Text(
+                                    text = if (hasAnimatedSvg) "🎬 SVG ACTIVE" else "NO SVG",
+                                    color = if (hasAnimatedSvg) LeafGreen else TextMuted,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
                         }
 
-                        Row {
-                            TextButton(onClick = { editingCategory = cat; showDialog = true }) {
-                                Text("Edit", color = Color.White, fontWeight = FontWeight.Bold)
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF334155))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Button(
+                                onClick = { categoryForSvgPicker = cat },
+                                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen.copy(alpha = 0.15f), contentColor = LeafGreen),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, LeafGreen),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Icon(Icons.Default.Star, contentDescription = "SVG", modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("🎬 Pick Animated SVG", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
-                            TextButton(onClick = { coroutineScope.launch { repository.deleteCategory(cat.id) } }) {
-                                Text("Delete", color = Color(0xFFEF4444))
+
+                            Row {
+                                TextButton(onClick = { editingCategory = cat; showCategoryDialog = true }) {
+                                    Text("Edit", color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                                TextButton(onClick = { coroutineScope.launch { repository.deleteCategory(cat.id) } }) {
+                                    Text("Delete", color = Color(0xFFEF4444))
+                                }
                             }
                         }
                     }
@@ -548,17 +588,36 @@ fun MobileCategoriesView(
         }
     }
 
-    if (showDialog) {
+    if (showCategoryDialog) {
         MobileCategoryDialog(
             category = editingCategory,
             existingCategories = categories,
-            onDismiss = { showDialog = false },
+            animatedSvgPack = animatedSvgPack,
+            repository = repository,
+            onDismiss = { showCategoryDialog = false },
             onSave = { category ->
                 coroutineScope.launch {
                     if (editingCategory == null) repository.addCategory(category) else repository.updateCategory(category)
-                    showDialog = false
+                    showCategoryDialog = false
                 }
             }
+        )
+    }
+
+    categoryForSvgPicker?.let { cat ->
+        AnimatedSvgPickerModal(
+            selectedAnimatedSvg = cat.animatedSvg,
+            dbAnimatedSvgPack = animatedSvgPack,
+            onAnimatedSvgSelected = { newSvg ->
+                coroutineScope.launch {
+                    repository.updateCategory(cat.copy(animatedSvg = newSvg))
+                    categoryForSvgPicker = null
+                }
+            },
+            onUploadToDbPack = { newItem ->
+                coroutineScope.launch { repository.saveAnimatedSvgToPack(newItem) }
+            },
+            onDismiss = { categoryForSvgPicker = null }
         )
     }
 }
@@ -738,12 +797,27 @@ fun MobileItemDialog(
     var selectedCategory by remember { mutableStateOf(categories.find { it.id == item?.categoryId } ?: categories.firstOrNull()) }
     var expandedCat by remember { mutableStateOf(false) }
 
+    // Multi-branch price entries
+    val branchPricesMap = remember {
+        mutableStateMapOf<String, String>().apply {
+            branches.forEach { b ->
+                val price = item?.branches?.get(b.id)?.price?.toString() ?: defaultPriceText
+                put(b.id, price)
+            }
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = CardNavySurface,
         title = { Text(if (item != null) "Edit Menu Item" else "Add New Item", color = Color.White, fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -755,7 +829,7 @@ fun MobileItemDialog(
                 OutlinedTextField(
                     value = defaultPriceText,
                     onValueChange = { defaultPriceText = it },
-                    label = { Text("Default Price (₹)", color = TextMuted) },
+                    label = { Text("Base Default Price (₹)", color = TextMuted) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
@@ -776,28 +850,57 @@ fun MobileItemDialog(
                         }
                     }
                 }
+
+                HorizontalDivider(color = Color(0xFF334155))
+
+                Text("Branch Specific Prices (₹):", color = LeafGreen, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+
+                branches.forEach { b ->
+                    OutlinedTextField(
+                        value = branchPricesMap[b.id] ?: defaultPriceText,
+                        onValueChange = { branchPricesMap[b.id] = it },
+                        label = { Text("Price for ${b.name}", color = TextMuted) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val price = defaultPriceText.toDoubleOrNull() ?: 0.0
+                    val basePrice = defaultPriceText.toDoubleOrNull() ?: 0.0
                     val catId = selectedCategory?.id ?: "general"
                     val catName = selectedCategory?.name ?: "General"
+
+                    val updatedBranches = mutableMapOf<String, BranchPriceConfig>()
+                    branches.forEach { b ->
+                        val bPrice = branchPricesMap[b.id]?.toDoubleOrNull() ?: basePrice
+                        val currentAvail = item?.branches?.get(b.id)?.available ?: true
+                        updatedBranches[b.id] = BranchPriceConfig(price = bPrice, available = currentAvail)
+                    }
 
                     val newItem = (item ?: MenuItem(
                         id = "item_${kotlin.random.Random.nextLong(100000, 999999)}",
                         name = name,
                         categoryId = catId,
                         categoryName = catName,
-                        defaultPrice = price
-                    )).copy(name = name, categoryId = catId, categoryName = catName, defaultPrice = price)
+                        defaultPrice = basePrice,
+                        branches = updatedBranches
+                    )).copy(
+                        name = name,
+                        categoryId = catId,
+                        categoryName = catName,
+                        defaultPrice = basePrice,
+                        branches = updatedBranches
+                    )
 
                     onSave(newItem)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
             ) {
-                Text("SAVE", fontWeight = FontWeight.Bold)
+                Text("SAVE ITEM", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
@@ -808,11 +911,17 @@ fun MobileItemDialog(
 fun MobileCategoryDialog(
     category: Category?,
     existingCategories: List<Category>,
+    animatedSvgPack: List<AnimatedSvgItem>,
+    repository: MenuRepository,
     onDismiss: () -> Unit,
     onSave: (Category) -> Unit
 ) {
     var name by remember { mutableStateOf(category?.name ?: "") }
     var orderText by remember { mutableStateOf(category?.displayOrder?.toString() ?: "1") }
+    var animatedSvg by remember { mutableStateOf(category?.animatedSvg ?: "") }
+    var showSvgPickerModal by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -836,22 +945,57 @@ fun MobileCategoryDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                 )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Button(
+                    onClick = { showSvgPickerModal = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Star, contentDescription = "SVG", modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("🎬 ✨ Pick / Upload Animated SVG", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                }
+
+                if (animatedSvg.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("✓ Animated SVG Active (${animatedSvg.length} chars)", color = LeafGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        TextButton(onClick = { animatedSvg = "" }) { Text("Clear", color = Color(0xFFEF4444), fontSize = 11.sp) }
+                    }
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
                     val order = orderText.toIntOrNull() ?: 999
-                    val id = category?.id ?: "cat_${kotlin.random.Random.nextLong(100000, 999999)}"
-                    onSave(Category(id = id, name = name.trim(), displayOrder = order))
+                    val id = category?.id ?: name.trim().lowercase().replace(" ", "_").ifBlank { "cat_${kotlin.random.Random.nextLong(100000, 999999)}" }
+                    onSave(Category(id = id, name = name.trim(), displayOrder = order, animatedSvg = animatedSvg))
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
             ) {
-                Text("SAVE", fontWeight = FontWeight.Bold)
+                Text("SAVE CATEGORY", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
     )
+
+    if (showSvgPickerModal) {
+        AnimatedSvgPickerModal(
+            selectedAnimatedSvg = animatedSvg,
+            dbAnimatedSvgPack = animatedSvgPack,
+            onAnimatedSvgSelected = { newSvg -> animatedSvg = newSvg },
+            onUploadToDbPack = { newItem ->
+                coroutineScope.launch { repository.saveAnimatedSvgToPack(newItem) }
+            },
+            onDismiss = { showSvgPickerModal = false }
+        )
+    }
 }
 
 @Composable
