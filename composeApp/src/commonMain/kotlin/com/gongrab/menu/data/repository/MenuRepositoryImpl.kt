@@ -16,7 +16,7 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 class MenuRepositoryImpl(
-    private val rootPath: String = System.getProperty("user.dir")
+    private val rootPath: String = System.getProperty("user.dir") ?: "."
 ) : MenuRepository {
 
     private val json = Json {
@@ -74,45 +74,67 @@ class MenuRepositoryImpl(
                 _categories.value = cache.categories
                 _items.value = cache.items
                 _animatedSvgPack.value = cache.animatedSvgPack
+                println("✓ Loaded ${_items.value.size} items from local file system cache")
             } else {
                 _branches.value = defaultBranches()
             }
         } catch (e: Exception) {
-            println("Error loading local menu data: ${e.message}")
+            println("Error loading local menu data file: ${e.message}")
             _branches.value = defaultBranches()
         }
-        loadFromFirebaseServer()
+
+        // Fetch from network (GitHub live endpoint / Local server / Seed fallback)
+        loadFromNetworkOrSeed()
     }
 
-    private fun loadFromFirebaseServer() {
+    private fun loadFromNetworkOrSeed() {
+        // 1. Try fetching from live GitHub URL (accessible anywhere on mobile internet / Wi-Fi)
         try {
-            val catUrl = java.net.URI("http://localhost:3000/api/categories").toURL()
-            val catConn = catUrl.openConnection() as java.net.HttpURLConnection
-            catConn.connectTimeout = 5000
-            catConn.readTimeout = 5000
-            if (catConn.responseCode == 200) {
-                val text = catConn.inputStream.bufferedReader().use { it.readText() }
-                val fetchedCats = json.decodeFromString<List<Category>>(text)
-                if (fetchedCats.isNotEmpty()) {
-                    _categories.value = fetchedCats
-                    println("✓ Loaded ${fetchedCats.size} categories directly from Firebase server")
+            val liveUrl = java.net.URI("https://harjit8016.github.io/GoNGrab/data.json").toURL()
+            val conn = liveUrl.openConnection() as java.net.HttpURLConnection
+            conn.connectTimeout = 6000
+            conn.readTimeout = 6000
+            if (conn.responseCode == 200) {
+                val text = conn.inputStream.bufferedReader().use { it.readText() }
+                val cache = json.decodeFromString<MenuDataCache>(text)
+                if (cache.items.isNotEmpty()) {
+                    _branches.value = cache.branches.ifEmpty { defaultBranches() }
+                    _categories.value = cache.categories
+                    _items.value = cache.items
+                    _animatedSvgPack.value = cache.animatedSvgPack
+                    println("✓ Loaded ${cache.items.size} items directly from GitHub live server URL")
+                    return
                 }
             }
+        } catch (e: Exception) {
+            println("GitHub live fetch notice: ${e.message}")
+        }
 
+        // 2. Try fetching from localhost:3000 (for local node backend server)
+        try {
             val itemUrl = java.net.URI("http://localhost:3000/api/items").toURL()
             val itemConn = itemUrl.openConnection() as java.net.HttpURLConnection
-            itemConn.connectTimeout = 5000
-            itemConn.readTimeout = 5000
+            itemConn.connectTimeout = 3000
+            itemConn.readTimeout = 3000
             if (itemConn.responseCode == 200) {
                 val text = itemConn.inputStream.bufferedReader().use { it.readText() }
                 val fetchedItems = json.decodeFromString<List<MenuItem>>(text)
                 if (fetchedItems.isNotEmpty()) {
                     _items.value = fetchedItems
-                    println("✓ Loaded ${fetchedItems.size} items directly from Firebase server")
+                    println("✓ Loaded ${fetchedItems.size} items directly from local Express server")
                 }
             }
         } catch (e: Exception) {
-            println("Server database fetch notice: ${e.message}")
+            println("Localhost server fetch notice: ${e.message}")
+        }
+
+        // 3. Fallback to seed data if items are still empty
+        if (_items.value.isEmpty()) {
+            println("Loading embedded seed data fallback...")
+            val (seedCats, seedItems) = getSeedFallbackData()
+            _categories.value = seedCats
+            _items.value = seedItems
+            _branches.value = defaultBranches()
         }
     }
 
@@ -134,22 +156,16 @@ class MenuRepositoryImpl(
             val jsonText = json.encodeToString(MenuDataCache.serializer(), cache)
             
             val mainCache = File(rootPath, "data_cache.json")
-            mainCache.writeText(jsonText)
+            if (mainCache.parentFile?.canWrite() == true || mainCache.exists()) {
+                mainCache.writeText(jsonText)
+            }
 
             val rootData = File(rootPath, "data.json")
-            rootData.writeText(jsonText)
-
-            val publicData = File(rootPath, "public/data.json")
-            if (publicData.parentFile?.exists() == true) {
-                publicData.writeText(jsonText)
-            }
-
-            val active = activeDataFile
-            if (active.absolutePath != mainCache.absolutePath && active.exists()) {
-                active.writeText(jsonText)
+            if (rootData.parentFile?.canWrite() == true || rootData.exists()) {
+                rootData.writeText(jsonText)
             }
         } catch (e: Exception) {
-            println("Error saving menu data: ${e.message}")
+            println("Notice on saveToDisk: ${e.message}")
         }
     }
 
@@ -178,10 +194,8 @@ class MenuRepositoryImpl(
     }
 
     override suspend fun duplicateBranch(sourceBranchId: String, newBranch: Branch) {
-        // 1. Add new branch
         _branches.value = _branches.value + newBranch
 
-        // 2. Clone all item branch configs (prices and availability) from sourceBranchId -> newBranch.id
         _items.value = _items.value.map { item ->
             val sourceConfig = item.branches[sourceBranchId]
             if (sourceConfig != null) {
@@ -196,110 +210,98 @@ class MenuRepositoryImpl(
         saveToDisk()
     }
 
-    private fun syncCategoryToFirebaseServer(category: Category) {
-        try {
-            val url = java.net.URI("http://localhost:3000/api/categories").toURL()
-            val conn = url.openConnection() as java.net.HttpURLConnection
-            conn.requestMethod = "POST"
-            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            conn.connectTimeout = 10000
-            conn.readTimeout = 10000
-            conn.doOutput = true
-
-            val nameJson = json.encodeToString(kotlinx.serialization.serializer(), category.name)
-            val svgJson = json.encodeToString(kotlinx.serialization.serializer(), category.animatedSvg)
-
-            val jsonPayload = """{"id":"${category.id}","name":$nameJson,"displayOrder":${category.displayOrder},"animatedSvg":$svgJson}"""
-            val input = jsonPayload.toByteArray(Charsets.UTF_8)
-            conn.setFixedLengthStreamingMode(input.size)
-
-            conn.outputStream.use { os ->
-                os.write(input, 0, input.size)
-            }
-
-            val code = conn.responseCode
-            println("✓ Synced category '${category.id}' (${input.size} bytes) to Firebase server. Status: $code")
-        } catch (e: Exception) {
-            println("Category sync to Firebase notice: ${e.message}")
-        }
-    }
-
-    private fun syncItemToFirebaseServer(item: MenuItem) {
-        try {
-            val url = java.net.URI("http://localhost:3000/api/items/${item.id}").toURL()
-            val conn = url.openConnection() as java.net.HttpURLConnection
-            conn.requestMethod = "PUT"
-            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-            conn.connectTimeout = 10000
-            conn.readTimeout = 10000
-            conn.doOutput = true
-
-            val itemJson = json.encodeToString(MenuItem.serializer(), item)
-            val input = itemJson.toByteArray(Charsets.UTF_8)
-            conn.setFixedLengthStreamingMode(input.size)
-
-            conn.outputStream.use { os ->
-                os.write(input, 0, input.size)
-            }
-
-            val code = conn.responseCode
-            println("✓ Synced item '${item.id}' ('${item.name}') to Firebase server. Status: $code")
-        } catch (e: Exception) {
-            println("Item sync to Firebase notice: ${e.message}")
-        }
-    }
-
-    private fun deleteItemFromFirebaseServer(itemId: String) {
-        try {
-            val url = java.net.URI("http://localhost:3000/api/items/$itemId").toURL()
-            val conn = url.openConnection() as java.net.HttpURLConnection
-            conn.requestMethod = "DELETE"
-            conn.connectTimeout = 10000
-            conn.readTimeout = 10000
-
-            val code = conn.responseCode
-            println("✓ Deleted item '$itemId' on Firebase server. Status: $code")
-        } catch (e: Exception) {
-            println("Item delete sync notice: ${e.message}")
-        }
-    }
-
     override suspend fun addCategory(category: Category) {
         _categories.value = _categories.value + category
         saveToDisk()
-        syncCategoryToFirebaseServer(category)
     }
 
     override suspend fun updateCategory(category: Category) {
         _categories.value = _categories.value.map { if (it.id == category.id) category else it }
-        _items.value = _items.value.map { item ->
-            if (item.categoryId == category.id) item.copy(categoryName = category.name) else item
-        }
         saveToDisk()
-        syncCategoryToFirebaseServer(category)
     }
 
     override suspend fun deleteCategory(categoryId: String) {
         _categories.value = _categories.value.filter { it.id != categoryId }
-        _items.value = _items.value.filter { it.categoryId != categoryId }
         saveToDisk()
     }
 
     override suspend fun addMenuItem(item: MenuItem) {
         _items.value = _items.value + item
         saveToDisk()
-        syncItemToFirebaseServer(item)
     }
 
     override suspend fun updateMenuItem(item: MenuItem) {
         _items.value = _items.value.map { if (it.id == item.id) item else it }
         saveToDisk()
-        syncItemToFirebaseServer(item)
     }
 
     override suspend fun deleteMenuItem(itemId: String) {
         _items.value = _items.value.filter { it.id != itemId }
         saveToDisk()
-        deleteItemFromFirebaseServer(itemId)
+    }
+
+    private fun getSeedFallbackData(): Pair<List<Category>, List<MenuItem>> {
+        val cats = listOf(
+            Category("shake", "Shake", 1),
+            Category("mojito", "Mojito", 2),
+            Category("smoothies", "Smoothies", 3),
+            Category("ice_tea", "Ice Tea", 4),
+            Category("pasta", "Pasta", 5),
+            Category("maggie", "Maggie", 6),
+            Category("dessert", "Dessert", 7),
+            Category("sandwich", "Sandwich", 8),
+            Category("sub_sandwich", "Sub Sandwich", 9),
+            Category("garlic_bread", "Garlic Bread", 10),
+            Category("burger", "Burger", 11),
+            Category("wrap", "Wrap", 12),
+            Category("fries", "Fries & Sides", 13),
+            Category("pizza", "Pizza", 14),
+            Category("waffle", "Waffle", 15),
+            Category("pancake", "Pancake", 16),
+            Category("momos", "Momos", 17),
+            Category("spring_roll", "Spring Roll", 18),
+            Category("chai_coffee", "Chai & Coffee", 19),
+            Category("nachos", "Nachos", 20),
+            Category("add_ons", "Add-ons", 21)
+        )
+
+        val items = listOf(
+            MenuItem("shk_1", "Chocolate Shake", "shake", "Shake", 140.0),
+            MenuItem("shk_2", "Oreo Shake", "shake", "Shake", 150.0),
+            MenuItem("shk_3", "KitKat Shake", "shake", "Shake", 160.0),
+            MenuItem("shk_4", "Strawberry Shake", "shake", "Shake", 130.0),
+
+            MenuItem("moj_1", "Virgin Mojito", "mojito", "Mojito", 120.0),
+            MenuItem("moj_2", "Green Apple Mojito", "mojito", "Mojito", 130.0),
+            MenuItem("moj_3", "Watermelon Mojito", "mojito", "Mojito", 130.0),
+
+            MenuItem("brg_1", "Classic Veg Burger", "burger", "Burger", 99.0),
+            MenuItem("brg_2", "Cheese Burst Burger", "burger", "Burger", 149.0),
+            MenuItem("brg_3", "Paneer Crisp Burger", "burger", "Burger", 169.0),
+
+            MenuItem("pza_1", "Margherita Pizza", "pizza", "Pizza", 199.0),
+            MenuItem("pza_2", "Farmhouse Veg Pizza", "pizza", "Pizza", 279.0),
+            MenuItem("pza_3", "Paneer Tikka Pizza", "pizza", "Pizza", 299.0),
+
+            MenuItem("snd_1", "Veg Grilled Sandwich", "sandwich", "Sandwich", 110.0),
+            MenuItem("snd_2", "Cheese Corn Sandwich", "sandwich", "Sandwich", 130.0),
+
+            MenuItem("frs_1", "Peri Peri Fries", "fries", "Fries & Sides", 119.0),
+            MenuItem("frs_2", "Cheese Loaded Fries", "fries", "Fries & Sides", 149.0),
+
+            MenuItem("pst_1", "White Sauce Pasta", "pasta", "Pasta", 180.0),
+            MenuItem("pst_2", "Red Sauce Pasta", "pasta", "Pasta", 170.0),
+
+            MenuItem("wfl_1", "Nutella Waffle", "waffle", "Waffle", 160.0),
+            MenuItem("wfl_2", "Belgian Chocolate Waffle", "waffle", "Waffle", 170.0),
+
+            MenuItem("mmo_1", "Steamed Veg Momos", "momos", "Momos", 110.0),
+            MenuItem("mmo_2", "Fried Paneer Momos", "momos", "Momos", 140.0),
+
+            MenuItem("cof_1", "Cold Coffee", "chai_coffee", "Chai & Coffee", 110.0),
+            MenuItem("cof_2", "Hot Cappuccino", "chai_coffee", "Chai & Coffee", 90.0)
+        )
+
+        return Pair(cats, items)
     }
 }
