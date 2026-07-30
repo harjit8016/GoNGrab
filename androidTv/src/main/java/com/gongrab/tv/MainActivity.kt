@@ -15,7 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
-    private val tvMenuUrl = "https://harjit8016.github.io/GoNGrab/tv.html"
+    private val tvMenuUrl = "file:///android_asset/tv.html"
 
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
                 domStorageEnabled = true
                 databaseEnabled = true
                 allowFileAccess = true
+                allowContentAccess = true
                 useWideViewPort = true
                 loadWithOverviewMode = true
                 mediaPlaybackRequiresUserGesture = false
@@ -51,7 +52,7 @@ class MainActivity : AppCompatActivity() {
                     description: String?,
                     failingUrl: String?
                 ) {
-                    // Retry loading after network recovery
+                    // Retry loading after any error
                     view?.postDelayed({ view.loadUrl(tvMenuUrl) }, 5000)
                 }
             }
