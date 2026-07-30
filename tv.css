@@ -137,76 +137,133 @@ html, body {
   white-space: nowrap;
 }
 
-/* Branch Selector Modal Overlay */
+/* Premium Big-Card Branch Selector Modal Overlay */
 .branch-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(10, 16, 23, 0.96);
-  backdrop-filter: blur(12px);
+  background: radial-gradient(circle at center, rgba(158, 201, 86, 0.12) 0%, rgba(7, 11, 16, 0.98) 75%);
+  backdrop-filter: blur(16px);
   z-index: 9999;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2vw;
+  padding: 3vw;
 }
 
-.branch-modal-title {
-  font-size: 2.2rem;
-  font-weight: 800;
+.branch-modal-header {
+  text-align: center;
+  margin-bottom: 3.2rem;
+}
+
+.branch-modal-logo {
+  font-size: 2.8rem;
+  font-weight: 900;
   color: var(--logo-green);
-  margin-bottom: 0.5rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+  text-shadow: 0 0 20px rgba(158, 201, 86, 0.4);
+  margin-bottom: 0.8rem;
 }
 
-.branch-modal-subtitle {
+.branch-modal-pill {
+  display: inline-block;
+  background: rgba(158, 201, 86, 0.12);
+  border: 1px solid rgba(158, 201, 86, 0.35);
+  color: #e2e8f0;
+  padding: 0.4rem 1.4rem;
+  border-radius: 30px;
   font-size: 1.1rem;
-  color: var(--text-muted);
-  margin-bottom: 2.5rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .branch-cards-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.8rem;
+  gap: 2.5rem;
   justify-content: center;
-  max-width: 900px;
+  align-items: center;
+  max-width: 1100px;
+  width: 100%;
 }
 
-.branch-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px solid var(--line-divider);
-  border-radius: 16px;
-  padding: 1.8rem 2.5rem;
-  min-width: 240px;
+.branch-card-big {
+  position: relative;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 3rem 2.8rem;
+  min-width: 300px;
+  max-width: 380px;
+  flex: 1;
   text-align: center;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   user-select: none;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.branch-card:hover, .branch-card:focus {
-  background: rgba(158, 201, 86, 0.15);
+.branch-card-big:hover, .branch-card-big:focus {
+  background: linear-gradient(145deg, rgba(158, 201, 86, 0.2) 0%, rgba(158, 201, 86, 0.05) 100%);
   border-color: var(--logo-green);
-  transform: translateY(-4px) scale(1.04);
-  box-shadow: 0 10px 30px rgba(158, 201, 86, 0.3);
+  transform: translateY(-8px) scale(1.06);
+  box-shadow: 0 20px 50px rgba(158, 201, 86, 0.4);
   outline: none;
 }
 
+.branch-card-icon {
+  width: 80px;
+  height: 80px;
+  background: rgba(158, 201, 86, 0.15);
+  border: 2px solid var(--logo-green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 20px rgba(158, 201, 86, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.branch-card-big:hover .branch-card-icon, .branch-card-big:focus .branch-card-icon {
+  transform: scale(1.12) rotate(4deg);
+}
+
 .branch-card-title {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 800;
   color: var(--text-white);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.6rem;
 }
 
 .branch-card-address {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 1.8rem;
+}
+
+.branch-card-btn-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--logo-green);
+  color: #0a1017;
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 0.6rem 1.6rem;
+  border-radius: 30px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(158, 201, 86, 0.4);
 }
 
 /* Floating Switch Branch Button */

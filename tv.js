@@ -1,5 +1,6 @@
 let urlBranchParam = getQueryParam('branch');
-let currentBranchId = urlBranchParam || localStorage.getItem('selectedBranchId') || null;
+// If URL has ?branch=branch_1, use it directly. Otherwise, ALWAYS ask for branch selection on launch!
+let currentBranchId = urlBranchParam || null;
 let menuData = [];
 let itemsUnsubscribe = null;
 
@@ -15,13 +16,9 @@ const firebaseConfig = {
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (urlBranchParam) {
-    localStorage.setItem('selectedBranchId', urlBranchParam);
-  }
-
-  if (!currentBranchId) {
-    showBranchSelectionScreen();
-  } else {
     initLiveDbListener();
+  } else {
+    showBranchSelectionScreen();
   }
 
   // Fullscreen trigger on first interaction
@@ -37,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('keydown', triggerAutoFs);
 });
 
-// Remote-Friendly First Page Branch Selection Screen
+// Remote-Friendly First Page Branch Selection Screen (Big Beautiful Centered Cards)
 function showBranchSelectionScreen() {
   let overlay = document.getElementById('branch-select-modal');
   if (!overlay) {
@@ -48,10 +45,12 @@ function showBranchSelectionScreen() {
   }
 
   overlay.innerHTML = `
-    <div class="branch-modal-title">GO N GRAB 24 SEVEN</div>
-    <div class="branch-modal-subtitle">Select Restaurant Branch to Display Menu</div>
+    <div class="branch-modal-header">
+      <div class="branch-modal-logo">GO N GRAB 24 SEVEN</div>
+      <div class="branch-modal-pill">SELECT RESTAURANT BRANCH</div>
+    </div>
     <div class="branch-cards-grid" id="branch-cards-container">
-      <div style="color: var(--text-muted); font-size: 1.2rem;">Loading branches from database...</div>
+      <div style="color: var(--text-muted); font-size: 1.3rem;">Loading branches from database...</div>
     </div>
   `;
 
@@ -80,22 +79,28 @@ async function fetchAndRenderBranches() {
 
     if (!branches || branches.length === 0) {
       branches = [
-        { id: 'branch_1', name: 'Branch 1', address: 'Main Street Display' },
-        { id: 'branch_2', name: 'Branch 2', address: 'Downtown Center' }
+        { id: 'branch_1', name: 'Branch 1', address: 'Main Street Location' },
+        { id: 'branch_2', name: 'Branch 2', address: 'Downtown Center Location' }
       ];
     }
 
     container.innerHTML = '';
+    const icons = ['🏬', '🏪', '🏙️', '📍'];
+
     branches.forEach((b, idx) => {
       const card = document.createElement('div');
-      card.className = 'branch-card';
+      card.className = 'branch-card-big';
       card.setAttribute('tabindex', '0');
       card.setAttribute('role', 'button');
       card.setAttribute('data-branch-id', b.id);
 
+      const iconEmoji = icons[idx % icons.length];
+
       card.innerHTML = `
-        <div class="branch-card-title">📍 ${b.name || b.id}</div>
-        <div class="branch-card-address">${b.address || 'Select to show live TV menu board'}</div>
+        <div class="branch-card-icon">${iconEmoji}</div>
+        <div class="branch-card-title">${b.name || b.id}</div>
+        <div class="branch-card-address">${b.address || 'Select to display live menu board'}</div>
+        <div class="branch-card-btn-indicator">ENTER MENU ➔</div>
       `;
 
       card.addEventListener('click', () => selectBranch(b.id));
@@ -109,19 +114,23 @@ async function fetchAndRenderBranches() {
     });
 
     // Auto-focus first card for TV Remote D-Pad control
-    const firstCard = container.querySelector('.branch-card');
+    const firstCard = container.querySelector('.branch-card-big');
     if (firstCard) firstCard.focus();
 
   } catch (err) {
     console.error('Error fetching branches:', err);
     container.innerHTML = `
-      <div class="branch-card" tabindex="0" onclick="selectBranch('branch_1')">
-        <div class="branch-card-title">📍 Branch 1</div>
+      <div class="branch-card-big" tabindex="0" onclick="selectBranch('branch_1')">
+        <div class="branch-card-icon">🏬</div>
+        <div class="branch-card-title">Branch 1</div>
         <div class="branch-card-address">Main Branch TV Board</div>
+        <div class="branch-card-btn-indicator">ENTER MENU ➔</div>
       </div>
-      <div class="branch-card" tabindex="0" onclick="selectBranch('branch_2')">
-        <div class="branch-card-title">📍 Branch 2</div>
+      <div class="branch-card-big" tabindex="0" onclick="selectBranch('branch_2')">
+        <div class="branch-card-icon">🏪</div>
+        <div class="branch-card-title">Branch 2</div>
         <div class="branch-card-address">Secondary Branch TV Board</div>
+        <div class="branch-card-btn-indicator">ENTER MENU ➔</div>
       </div>
     `;
   }
