@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -23,10 +25,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gongrab.menu.domain.model.AnimatedSvgItem
+import com.gongrab.menu.domain.model.Branch
 import com.gongrab.menu.domain.model.BranchPriceConfig
 import com.gongrab.menu.domain.model.Category
 import com.gongrab.menu.domain.model.MenuItem
 import com.gongrab.menu.domain.repository.MenuRepository
+import com.gongrab.menu.domain.validation.ValidationEngine
 import com.gongrab.menu.presentation.theme.BorderGreen
 import com.gongrab.menu.presentation.theme.CardNavySurface
 import com.gongrab.menu.presentation.theme.DarkNavyBg
@@ -35,11 +39,14 @@ import com.gongrab.menu.presentation.theme.TextMuted
 import com.gongrab.menu.presentation.ui.components.AnimatedSvgPickerModal
 import kotlinx.coroutines.launch
 
+enum class MobileNavTab { ITEMS, CATEGORIES, BRANCHES }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MobileAppScreen(repository: MenuRepository) {
     val coroutineScope = rememberCoroutineScope()
 
+    var activeTab by remember { mutableStateOf(MobileNavTab.ITEMS) }
     val branches by repository.branches.collectAsState()
     val categories by repository.categories.collectAsState()
     val items by repository.items.collectAsState()
@@ -51,22 +58,12 @@ fun MobileAppScreen(repository: MenuRepository) {
     var isSearchExpanded by remember { mutableStateOf(false) }
 
     var showBranchDrawer by remember { mutableStateOf(false) }
-    var showAddItemSheet by remember { mutableStateOf(false) }
-    var editingItem by remember { mutableStateOf<MenuItem?>(null) }
-    var showSvgPickerForItem by remember { mutableStateOf<MenuItem?>(null) }
 
-    // Resolve current branch name for top app bar header
+    // Resolve active branch name
     val currentBranchName = when (selectedBranchId) {
         "all" -> "🌐 All Branches"
         else -> branches.find { it.id == selectedBranchId }?.name ?: "📍 Branch 1"
     }
-
-    // Filter items based on category and search query (SHOW ALL ITEMS in management view)
-    val filteredItems = items.filter { item ->
-        val matchesCategory = selectedCategoryId == null || item.categoryId == selectedCategoryId
-        val matchesSearch = searchQuery.isBlank() || item.name.contains(searchQuery, ignoreCase = true)
-        matchesCategory && matchesSearch
-    }.sortedBy { it.displayOrder }
 
     Scaffold(
         topBar = {
@@ -74,55 +71,52 @@ fun MobileAppScreen(repository: MenuRepository) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(CardNavySurface)
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Left Hamburger Button
-                    IconButton(onClick = { showBranchDrawer = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Select Branch Hamburger Menu",
-                            tint = LeafGreen,
-                            modifier = Modifier.size(28.dp)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (activeTab == MobileNavTab.ITEMS) {
+                            IconButton(onClick = { showBranchDrawer = true }) {
+                                Icon(Icons.Default.Menu, contentDescription = "Branch Menu", tint = LeafGreen)
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .padding(start = 6.dp, end = 8.dp)
+                                    .size(10.dp)
+                                    .background(LeafGreen, CircleShape)
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier.clickable(enabled = activeTab == MobileNavTab.ITEMS) {
+                                showBranchDrawer = true
+                            }
+                        ) {
+                            Text(
+                                text = when (activeTab) {
+                                    MobileNavTab.ITEMS -> currentBranchName
+                                    MobileNavTab.CATEGORIES -> "📁 Categories (${categories.size})"
+                                    MobileNavTab.BRANCHES -> "🏢 Branches (${branches.size})"
+                                },
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Go N Grab 24/7",
+                                color = TextMuted,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
 
-                    // Center Top Header: Selected Branch Name
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { showBranchDrawer = true }
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .background(LeafGreen, CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = currentBranchName,
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "Dropdown",
-                            tint = TextMuted
-                        )
-                    }
-
-                    // Right Search Button
                     IconButton(onClick = { isSearchExpanded = !isSearchExpanded }) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search Items",
-                            tint = LeafGreen
-                        )
+                        Icon(Icons.Default.Search, contentDescription = "Search", tint = LeafGreen)
                     }
                 }
 
@@ -131,7 +125,7 @@ fun MobileAppScreen(repository: MenuRepository) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        placeholder = { Text("Search items...", color = TextMuted) },
+                        placeholder = { Text("Search ${activeTab.name.lowercase()}...", color = TextMuted) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
@@ -152,256 +146,299 @@ fun MobileAppScreen(repository: MenuRepository) {
             }
         },
         bottomBar = {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = CardNavySurface,
-                shadowElevation = 8.dp
+            NavigationBar(
+                containerColor = CardNavySurface,
+                contentColor = Color.White,
+                tonalElevation = 8.dp
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp, horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "${filteredItems.size} items",
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = currentBranchName,
-                            color = LeafGreen,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                NavigationBarItem(
+                    selected = activeTab == MobileNavTab.ITEMS,
+                    onClick = { activeTab = MobileNavTab.ITEMS },
+                    icon = { Icon(Icons.Default.Menu, contentDescription = "Items") },
+                    label = { Text("Items (${items.size})", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF0A1017),
+                        selectedTextColor = LeafGreen,
+                        indicatorColor = LeafGreen,
+                        unselectedIconColor = TextMuted,
+                        unselectedTextColor = TextMuted
+                    )
+                )
 
-                    FloatingActionButton(
-                        onClick = { showAddItemSheet = true },
-                        containerColor = LeafGreen,
-                        contentColor = Color(0xFF0A1017)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Item")
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("ADD ITEM", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        }
-                    }
-                }
+                NavigationBarItem(
+                    selected = activeTab == MobileNavTab.CATEGORIES,
+                    onClick = { activeTab = MobileNavTab.CATEGORIES },
+                    icon = { Icon(Icons.Default.List, contentDescription = "Categories") },
+                    label = { Text("Categories (${categories.size})", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF0A1017),
+                        selectedTextColor = LeafGreen,
+                        indicatorColor = LeafGreen,
+                        unselectedIconColor = TextMuted,
+                        unselectedTextColor = TextMuted
+                    )
+                )
+
+                NavigationBarItem(
+                    selected = activeTab == MobileNavTab.BRANCHES,
+                    onClick = { activeTab = MobileNavTab.BRANCHES },
+                    icon = { Icon(Icons.Default.LocationOn, contentDescription = "Branches") },
+                    label = { Text("Branches (${branches.size})", fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Color(0xFF0A1017),
+                        selectedTextColor = LeafGreen,
+                        indicatorColor = LeafGreen,
+                        unselectedIconColor = TextMuted,
+                        unselectedTextColor = TextMuted
+                    )
+                )
             }
         },
         containerColor = DarkNavyBg
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Horizontal Category Pill Bar
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 10.dp, horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    val isAllSelected = selectedCategoryId == null
-                    FilterChip(
-                        selected = isAllSelected,
-                        onClick = { selectedCategoryId = null },
-                        label = { Text("All (${items.size})", fontWeight = FontWeight.Bold) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = LeafGreen,
-                            selectedLabelColor = Color(0xFF0A1017),
-                            containerColor = CardNavySurface,
-                            labelColor = Color.White
-                        )
-                    )
-                }
+            when (activeTab) {
+                MobileNavTab.ITEMS -> MobileItemsView(
+                    items = items,
+                    categories = categories,
+                    branches = branches,
+                    selectedBranchId = selectedBranchId,
+                    selectedCategoryId = selectedCategoryId,
+                    searchQuery = searchQuery,
+                    animatedSvgPack = animatedSvgPack,
+                    onSelectCategory = { selectedCategoryId = it },
+                    repository = repository
+                )
 
-                items(categories) { cat ->
-                    val isSelected = selectedCategoryId == cat.id
-                    val count = items.count { it.categoryId == cat.id }
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { selectedCategoryId = cat.id },
-                        label = { Text("${cat.name} ($count)") },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = LeafGreen,
-                            selectedLabelColor = Color(0xFF0A1017),
-                            containerColor = CardNavySurface,
-                            labelColor = Color.White
-                        )
+                MobileNavTab.CATEGORIES -> MobileCategoriesView(
+                    categories = categories,
+                    searchQuery = searchQuery,
+                    animatedSvgPack = animatedSvgPack,
+                    repository = repository
+                )
+
+                MobileNavTab.BRANCHES -> MobileBranchesView(
+                    branches = branches,
+                    searchQuery = searchQuery,
+                    repository = repository
+                )
+            }
+        }
+    }
+
+    // Branch Selector Drawer
+    if (showBranchDrawer) {
+        MobileBranchSelectorModal(
+            branches = branches,
+            selectedBranchId = selectedBranchId,
+            onSelectBranch = { id ->
+                selectedBranchId = id
+                showBranchDrawer = false
+            },
+            onDismiss = { showBranchDrawer = false }
+        )
+    }
+}
+
+// =========================================================================
+// 1. MOBILE ITEMS MANAGEMENT VIEW
+// =========================================================================
+@Composable
+fun MobileItemsView(
+    items: List<MenuItem>,
+    categories: List<Category>,
+    branches: List<Branch>,
+    selectedBranchId: String,
+    selectedCategoryId: String?,
+    searchQuery: String,
+    animatedSvgPack: List<AnimatedSvgItem>,
+    onSelectCategory: (String?) -> Unit,
+    repository: MenuRepository
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var showAddItemSheet by remember { mutableStateOf(false) }
+    var editingItem by remember { mutableStateOf<MenuItem?>(null) }
+    var showSvgPickerForItem by remember { mutableStateOf<MenuItem?>(null) }
+
+    val filteredItems = remember(items, selectedCategoryId, searchQuery) {
+        items.filter { item ->
+            val matchesCat = selectedCategoryId == null || item.categoryId == selectedCategoryId
+            val matchesSearch = searchQuery.isBlank() || item.name.contains(searchQuery, ignoreCase = true)
+            matchesCat && matchesSearch
+        }.sortedBy { it.displayOrder }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Horizontal Category Pill Carousel
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 10.dp, horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            item {
+                FilterChip(
+                    selected = selectedCategoryId == null,
+                    onClick = { onSelectCategory(null) },
+                    label = { Text("All (${items.size})", fontWeight = FontWeight.Bold) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = LeafGreen,
+                        selectedLabelColor = Color(0xFF0A1017),
+                        containerColor = CardNavySurface,
+                        labelColor = Color.White
                     )
-                }
+                )
             }
 
-            // Mobile Single-Column Item Feed
-            if (filteredItems.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Loading items from database...",
-                        color = TextMuted,
-                        fontSize = 16.sp
+            items(categories) { cat ->
+                val isSelected = selectedCategoryId == cat.id
+                val count = items.count { it.categoryId == cat.id }
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onSelectCategory(cat.id) },
+                    label = { Text("${cat.name} ($count)") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = LeafGreen,
+                        selectedLabelColor = Color(0xFF0A1017),
+                        containerColor = CardNavySurface,
+                        labelColor = Color.White
                     )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(filteredItems, key = { it.id }) { item ->
-                        MobileMenuItemCard(
-                            item = item,
-                            selectedBranchId = selectedBranchId,
-                            categories = categories,
-                            onToggleAvailability = { available ->
-                                coroutineScope.launch {
-                                    val updatedBranches = item.branches.toMutableMap()
-                                    val currentConfig = updatedBranches[selectedBranchId] ?: BranchPriceConfig(price = item.defaultPrice)
-                                    updatedBranches[selectedBranchId] = currentConfig.copy(available = available)
-                                    repository.updateMenuItem(item.copy(branches = updatedBranches))
+                )
+            }
+        }
+
+        // Add Item Floating Action Header Bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Showing ${filteredItems.size} items",
+                color = TextMuted,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Button(
+                onClick = { showAddItemSheet = true },
+                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017)),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Add New Item", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            }
+        }
+
+        if (filteredItems.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No items found in database", color = TextMuted, fontSize = 15.sp)
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(filteredItems, key = { it.id }) { item ->
+                    val branchConfig = item.branches[selectedBranchId]
+                    val isAvailable = branchConfig?.available ?: true
+                    val currentPrice = branchConfig?.price ?: item.defaultPrice
+                    val categoryName = categories.find { it.id == item.categoryId }?.name ?: "General"
+
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = CardNavySurface),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, if (isAvailable) BorderGreen else Color(0xFF334155), RoundedCornerShape(14.dp)),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(item.name, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                    Text("📂 $categoryName", color = TextMuted, fontSize = 12.sp)
                                 }
-                            },
-                            onEditClick = { editingItem = item },
-                            onSvgClick = { showSvgPickerForItem = item },
-                            onDeleteClick = {
-                                coroutineScope.launch { repository.deleteMenuItem(item.id) }
+
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = LeafGreen.copy(alpha = 0.15f),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, LeafGreen.copy(alpha = 0.4f))
+                                ) {
+                                    Text(
+                                        text = "₹$currentPrice",
+                                        color = LeafGreen,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    )
+                                }
                             }
-                        )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = if (isAvailable) "In Stock" else "Out of Stock",
+                                        color = if (isAvailable) LeafGreen else Color(0xFFEF4444),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Switch(
+                                        checked = isAvailable,
+                                        onCheckedChange = { available ->
+                                            coroutineScope.launch {
+                                                val updatedBranches = item.branches.toMutableMap()
+                                                val current = updatedBranches[selectedBranchId] ?: BranchPriceConfig(price = item.defaultPrice)
+                                                updatedBranches[selectedBranchId] = current.copy(available = available)
+                                                repository.updateMenuItem(item.copy(branches = updatedBranches))
+                                            }
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = LeafGreen,
+                                            checkedTrackColor = LeafGreen.copy(alpha = 0.3f)
+                                        )
+                                    )
+                                }
+
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    IconButton(onClick = { showSvgPickerForItem = item }) {
+                                        Icon(Icons.Default.Star, contentDescription = "SVG", tint = LeafGreen)
+                                    }
+                                    IconButton(onClick = { editingItem = item }) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF38BDF8))
+                                    }
+                                    IconButton(onClick = { coroutineScope.launch { repository.deleteMenuItem(item.id) } }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    // Hamburger Branch Selection Modal Sheet
-    if (showBranchDrawer) {
-        AlertDialog(
-            onDismissRequest = { showBranchDrawer = false },
-            containerColor = CardNavySurface,
-            title = {
-                Text(
-                    text = "🏬 Select Restaurant Branch",
-                    color = LeafGreen,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text("Select branch to manage prices and menu availability:", color = TextMuted, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    val allBranchesList = branches.ifEmpty {
-                        listOf(
-                            com.gongrab.menu.domain.model.Branch("branch_1", "Branch 1", "Main Branch Location"),
-                            com.gongrab.menu.domain.model.Branch("branch_2", "Branch 2", "Secondary Branch Location")
-                        )
-                    }
-
-                    allBranchesList.forEach { b ->
-                        val isSelected = selectedBranchId == b.id
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    selectedBranchId = b.id
-                                    showBranchDrawer = false
-                                },
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) LeafGreen.copy(alpha = 0.2f) else DarkNavyBg,
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                if (isSelected) LeafGreen else BorderGreen
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column {
-                                    Text(
-                                        text = "📍 ${b.name}",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    )
-                                    if (b.address.isNotBlank()) {
-                                        Text(text = b.address, color = TextMuted, fontSize = 12.sp)
-                                    }
-                                }
-
-                                if (isSelected) {
-                                    Icon(Icons.Default.Check, contentDescription = "Selected", tint = LeafGreen)
-                                }
-                            }
-                        }
-                    }
-
-                    // All branches option
-                    val isAllSelected = selectedBranchId == "all"
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                selectedBranchId = "all"
-                                showBranchDrawer = false
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isAllSelected) LeafGreen.copy(alpha = 0.2f) else DarkNavyBg,
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            if (isAllSelected) LeafGreen else BorderGreen
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "🌐 All Branches",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                            if (isAllSelected) {
-                                Icon(Icons.Default.Check, contentDescription = "Selected", tint = LeafGreen)
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showBranchDrawer = false }) {
-                    Text("CLOSE", color = TextMuted)
-                }
-            }
-        )
-    }
-
-    // Dialog for Add/Edit
     if (showAddItemSheet || editingItem != null) {
-        MobileItemFormDialog(
+        MobileItemDialog(
             item = editingItem,
             categories = categories,
             branches = branches,
@@ -411,11 +448,7 @@ fun MobileAppScreen(repository: MenuRepository) {
             },
             onSave = { newItem ->
                 coroutineScope.launch {
-                    if (editingItem != null) {
-                        repository.updateMenuItem(newItem)
-                    } else {
-                        repository.addMenuItem(newItem)
-                    }
+                    if (editingItem != null) repository.updateMenuItem(newItem) else repository.addMenuItem(newItem)
                     showAddItemSheet = false
                     editingItem = null
                 }
@@ -423,7 +456,6 @@ fun MobileAppScreen(repository: MenuRepository) {
         )
     }
 
-    // SVG Picker Modal
     showSvgPickerForItem?.let { item ->
         AnimatedSvgPickerModal(
             selectedAnimatedSvg = "",
@@ -441,216 +473,306 @@ fun MobileAppScreen(repository: MenuRepository) {
                 }
             },
             onUploadToDbPack = { newItem ->
-                coroutineScope.launch {
-                    repository.saveAnimatedSvgToPack(newItem)
-                }
+                coroutineScope.launch { repository.saveAnimatedSvgToPack(newItem) }
             },
             onDismiss = { showSvgPickerForItem = null }
         )
     }
 }
 
+// =========================================================================
+// 2. MOBILE CATEGORIES MANAGEMENT VIEW
+// =========================================================================
 @Composable
-fun MobileMenuItemCard(
-    item: MenuItem,
-    selectedBranchId: String,
+fun MobileCategoriesView(
     categories: List<Category>,
-    onToggleAvailability: (Boolean) -> Unit,
-    onEditClick: () -> Unit,
-    onSvgClick: () -> Unit,
-    onDeleteClick: () -> Unit
+    searchQuery: String,
+    animatedSvgPack: List<AnimatedSvgItem>,
+    repository: MenuRepository
 ) {
-    val branchConfig = item.branches[selectedBranchId]
-    val isAvailable = branchConfig?.available ?: true
-    val currentPrice = branchConfig?.price ?: item.defaultPrice
-    val categoryName = categories.find { it.id == item.categoryId }?.name ?: "General"
+    val coroutineScope = rememberCoroutineScope()
+    var showDialog by remember { mutableStateOf(false) }
+    var editingCategory by remember { mutableStateOf<Category?>(null) }
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = CardNavySurface,
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            if (isAvailable) BorderGreen else Color(0xFF334155)
-        )
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            // Header Row: Item Name & Price
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+    val filteredCategories = remember(categories, searchQuery) {
+        if (searchQuery.isBlank()) categories
+        else categories.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Categories List", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Button(
+                onClick = { editingCategory = null; showDialog = true },
+                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
             ) {
-                Text(
-                    text = item.name,
-                    color = Color.White,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
+                Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("+ Add Category", fontWeight = FontWeight.Bold)
+            }
+        }
 
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = LeafGreen.copy(alpha = 0.15f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, LeafGreen.copy(alpha = 0.4f))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(filteredCategories, key = { it.id }) { cat ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = CardNavySurface),
+                    modifier = Modifier.fillMaxWidth().border(1.dp, BorderGreen, RoundedCornerShape(12.dp))
                 ) {
-                    Text(
-                        text = "₹${currentPrice}",
-                        color = LeafGreen,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Black,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
-                }
-            }
+                    Row(
+                        modifier = Modifier.padding(14.dp).fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(cat.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LeafGreen)
+                            Text("Display Order: ${cat.displayOrder}", color = TextMuted, fontSize = 12.sp)
+                        }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Sub-info Row: Category & Status Badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "📂 $categoryName",
-                    color = TextMuted,
-                    fontSize = 13.sp
-                )
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = if (isAvailable) "In Stock" else "Out of Stock",
-                        color = if (isAvailable) LeafGreen else Color(0xFFEF4444),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Switch(
-                        checked = isAvailable,
-                        onCheckedChange = onToggleAvailability,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = LeafGreen,
-                            checkedTrackColor = LeafGreen.copy(alpha = 0.3f),
-                            uncheckedThumbColor = Color(0xFF64748B),
-                            uncheckedTrackColor = Color(0xFF1E293B)
-                        )
-                    )
-                }
-            }
-
-            Divider(
-                modifier = Modifier.padding(vertical = 10.dp),
-                color = Color(0xFF1E293B)
-            )
-
-            // Action Buttons Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Actions",
-                    color = TextMuted,
-                    fontSize = 12.sp
-                )
-
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(onClick = onSvgClick) {
-                        Icon(Icons.Default.Star, contentDescription = "SVG Icon", tint = LeafGreen)
-                    }
-                    IconButton(onClick = onEditClick) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Item", tint = Color(0xFF38BDF8))
-                    }
-                    IconButton(onClick = onDeleteClick) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444))
+                        Row {
+                            TextButton(onClick = { editingCategory = cat; showDialog = true }) {
+                                Text("Edit", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                            TextButton(onClick = { coroutineScope.launch { repository.deleteCategory(cat.id) } }) {
+                                Text("Delete", color = Color(0xFFEF4444))
+                            }
+                        }
                     }
                 }
             }
         }
     }
+
+    if (showDialog) {
+        MobileCategoryDialog(
+            category = editingCategory,
+            existingCategories = categories,
+            onDismiss = { showDialog = false },
+            onSave = { category ->
+                coroutineScope.launch {
+                    if (editingCategory == null) repository.addCategory(category) else repository.updateCategory(category)
+                    showDialog = false
+                }
+            }
+        )
+    }
+}
+
+// =========================================================================
+// 3. MOBILE BRANCHES MANAGEMENT VIEW (WITH DUPLICATE / COPY BRANCH)
+// =========================================================================
+@Composable
+fun MobileBranchesView(
+    branches: List<Branch>,
+    searchQuery: String,
+    repository: MenuRepository
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var showBranchDialog by remember { mutableStateOf(false) }
+    var showDuplicateDialog by remember { mutableStateOf(false) }
+    var editingBranch by remember { mutableStateOf<Branch?>(null) }
+    var sourceBranchToCopy by remember { mutableStateOf<Branch?>(null) }
+
+    val filteredBranches = remember(branches, searchQuery) {
+        if (searchQuery.isBlank()) branches
+        else branches.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Branch Locations", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Button(
+                onClick = { editingBranch = null; showBranchDialog = true },
+                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("+ Add Branch", fontWeight = FontWeight.Bold)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(filteredBranches, key = { it.id }) { branch ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = CardNavySurface),
+                    modifier = Modifier.fillMaxWidth().border(1.dp, BorderGreen, RoundedCornerShape(12.dp))
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("📍 ${branch.name}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = LeafGreen)
+                                Text("Address: ${branch.address.ifEmpty { "Main Location" }}", color = TextMuted, fontSize = 12.sp)
+                            }
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = Color(0xFF334155))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Button(
+                                onClick = {
+                                    sourceBranchToCopy = branch
+                                    showDuplicateDialog = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen.copy(alpha = 0.2f), contentColor = LeafGreen),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, LeafGreen),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Text("📋 Copy / Duplicate Branch", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Row {
+                                TextButton(onClick = { editingBranch = branch; showBranchDialog = true }) {
+                                    Text("Edit", color = Color.White)
+                                }
+                                TextButton(onClick = { coroutineScope.launch { repository.deleteBranch(branch.id) } }) {
+                                    Text("Delete", color = Color(0xFFEF4444))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showBranchDialog) {
+        MobileBranchDialog(
+            branch = editingBranch,
+            existingBranches = branches,
+            onDismiss = { showBranchDialog = false },
+            onSave = { branch ->
+                coroutineScope.launch {
+                    if (editingBranch == null) repository.addBranch(branch) else repository.updateBranch(branch)
+                    showBranchDialog = false
+                }
+            }
+        )
+    }
+
+    if (showDuplicateDialog && sourceBranchToCopy != null) {
+        MobileDuplicateBranchDialog(
+            sourceBranch = sourceBranchToCopy!!,
+            existingBranches = branches,
+            onDismiss = { showDuplicateDialog = false },
+            onDuplicate = { newBranch ->
+                coroutineScope.launch {
+                    repository.duplicateBranch(sourceBranchToCopy!!.id, newBranch)
+                    showDuplicateDialog = false
+                }
+            }
+        )
+    }
+}
+
+// =========================================================================
+// DIALOGS & MODALS
+// =========================================================================
+@Composable
+fun MobileBranchSelectorModal(
+    branches: List<Branch>,
+    selectedBranchId: String,
+    onSelectBranch: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = CardNavySurface,
+        title = { Text("🏬 Select Restaurant Branch", color = LeafGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                branches.forEach { b ->
+                    val isSelected = selectedBranchId == b.id
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelectBranch(b.id) },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) LeafGreen.copy(alpha = 0.2f) else DarkNavyBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) LeafGreen else BorderGreen)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(14.dp).fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("📍 ${b.name}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            if (isSelected) Icon(Icons.Default.Check, contentDescription = "Selected", tint = LeafGreen)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("CLOSE", color = TextMuted) } }
+    )
 }
 
 @Composable
-fun MobileItemFormDialog(
+fun MobileItemDialog(
     item: MenuItem?,
     categories: List<Category>,
-    branches: List<com.gongrab.menu.domain.model.Branch>,
+    branches: List<Branch>,
     onDismiss: () -> Unit,
     onSave: (MenuItem) -> Unit
 ) {
     var name by remember { mutableStateOf(item?.name ?: "") }
     var defaultPriceText by remember { mutableStateOf(item?.defaultPrice?.toString() ?: "") }
     var selectedCategory by remember { mutableStateOf(categories.find { it.id == item?.categoryId } ?: categories.firstOrNull()) }
-    var expandedCatDropdown by remember { mutableStateOf(false) }
+    var expandedCat by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = CardNavySurface,
-        title = {
-            Text(
-                text = if (item != null) "Edit Menu Item" else "Add New Item",
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
-        },
+        title = { Text(if (item != null) "Edit Menu Item" else "Add New Item", color = Color.White, fontWeight = FontWeight.Bold) },
         text = {
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Item Name", color = TextMuted) },
-                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = LeafGreen,
-                        unfocusedBorderColor = BorderGreen,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    )
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                 )
 
                 OutlinedTextField(
                     value = defaultPriceText,
                     onValueChange = { defaultPriceText = it },
                     label = { Text("Default Price (₹)", color = TextMuted) },
-                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = LeafGreen,
-                        unfocusedBorderColor = BorderGreen,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    )
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                 )
 
-                // Category Dropdown
-                Box(modifier = Modifier.fillMaxWidth()) {
+                Box {
                     OutlinedButton(
-                        onClick = { expandedCatDropdown = true },
+                        onClick = { expandedCat = true },
                         modifier = Modifier.fillMaxWidth(),
                         border = androidx.compose.foundation.BorderStroke(1.dp, BorderGreen)
                     ) {
-                        Text(
-                            text = "Category: ${selectedCategory?.name ?: "Select Category"}",
-                            color = Color.White
-                        )
+                        Text("Category: ${selectedCategory?.name ?: "Select Category"}", color = Color.White)
                     }
 
-                    DropdownMenu(
-                        expanded = expandedCatDropdown,
-                        onDismissRequest = { expandedCatDropdown = false }
-                    ) {
+                    DropdownMenu(expanded = expandedCat, onDismissRequest = { expandedCat = false }) {
                         categories.forEach { cat ->
-                            DropdownMenuItem(
-                                text = { Text(cat.name) },
-                                onClick = {
-                                    selectedCategory = cat
-                                    expandedCatDropdown = false
-                                }
-                            )
+                            DropdownMenuItem(text = { Text(cat.name) }, onClick = { selectedCategory = cat; expandedCat = false })
                         }
                     }
                 }
@@ -669,24 +791,167 @@ fun MobileItemFormDialog(
                         categoryId = catId,
                         categoryName = catName,
                         defaultPrice = price
-                    )).copy(
-                        name = name,
-                        categoryId = catId,
-                        categoryName = catName,
-                        defaultPrice = price
-                    )
+                    )).copy(name = name, categoryId = catId, categoryName = catName, defaultPrice = price)
 
                     onSave(newItem)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
             ) {
-                Text("SAVE ITEM", fontWeight = FontWeight.Bold)
+                Text("SAVE", fontWeight = FontWeight.Bold)
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("CANCEL", color = TextMuted)
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
+    )
+}
+
+@Composable
+fun MobileCategoryDialog(
+    category: Category?,
+    existingCategories: List<Category>,
+    onDismiss: () -> Unit,
+    onSave: (Category) -> Unit
+) {
+    var name by remember { mutableStateOf(category?.name ?: "") }
+    var orderText by remember { mutableStateOf(category?.displayOrder?.toString() ?: "1") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = CardNavySurface,
+        title = { Text(if (category == null) "Create Category" else "Edit Category", color = LeafGreen, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Category Name", color = TextMuted) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                )
+
+                OutlinedTextField(
+                    value = orderText,
+                    onValueChange = { orderText = it },
+                    label = { Text("Display Order Index", color = TextMuted) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                )
             }
-        }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val order = orderText.toIntOrNull() ?: 999
+                    val id = category?.id ?: "cat_${kotlin.random.Random.nextLong(100000, 999999)}"
+                    onSave(Category(id = id, name = name.trim(), displayOrder = order))
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
+            ) {
+                Text("SAVE", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
+    )
+}
+
+@Composable
+fun MobileBranchDialog(
+    branch: Branch?,
+    existingBranches: List<Branch>,
+    onDismiss: () -> Unit,
+    onSave: (Branch) -> Unit
+) {
+    var name by remember { mutableStateOf(branch?.name ?: "") }
+    var address by remember { mutableStateOf(branch?.address ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = CardNavySurface,
+        title = { Text(if (branch == null) "Create Branch" else "Edit Branch", color = LeafGreen, fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Branch Name", color = TextMuted) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                )
+
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text("Address / Location", color = TextMuted) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val id = branch?.id ?: "branch_${kotlin.random.Random.nextLong(10000, 99999)}"
+                    onSave(Branch(id = id, name = name.trim(), address = address.trim()))
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
+            ) {
+                Text("SAVE", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
+    )
+}
+
+@Composable
+fun MobileDuplicateBranchDialog(
+    sourceBranch: Branch,
+    existingBranches: List<Branch>,
+    onDismiss: () -> Unit,
+    onDuplicate: (Branch) -> Unit
+) {
+    var name by remember { mutableStateOf("${sourceBranch.name} (Copy)") }
+    var address by remember { mutableStateOf(sourceBranch.address) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = CardNavySurface,
+        title = { Text("📋 Copy Branch: ${sourceBranch.name}", color = LeafGreen, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "This will clone all menu items, price rules, and availability settings from ${sourceBranch.name} into the new branch.",
+                    fontSize = 12.sp,
+                    color = TextMuted
+                )
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("New Branch Name", color = TextMuted) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                )
+
+                OutlinedTextField(
+                    value = address,
+                    onValueChange = { address = it },
+                    label = { Text("Address / Location", color = TextMuted) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val id = "branch_${kotlin.random.Random.nextLong(10000, 99999)}"
+                    onDuplicate(Branch(id = id, name = name.trim(), address = address.trim()))
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen, contentColor = Color(0xFF0A1017))
+            ) {
+                Text("CLONE & DUPLICATE", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = TextMuted) } }
     )
 }
