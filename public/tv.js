@@ -14,89 +14,17 @@ const firebaseConfig = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  renderFullscreenButton();
-
   // ALWAYS show Branch Selection Screen on startup!
   showBranchSelectionScreen();
-
-  // Fullscreen trigger on first interaction
-  const triggerAutoFs = () => {
-    enterFullscreen();
-    document.removeEventListener('click', triggerAutoFs);
-    document.removeEventListener('touchstart', triggerAutoFs);
-    document.removeEventListener('keydown', triggerAutoFs);
-  };
-
-  document.addEventListener('click', triggerAutoFs);
-  document.addEventListener('touchstart', triggerAutoFs);
-  document.addEventListener('keydown', triggerAutoFs);
-});
-
-// Double-click toggle full screen (window + document + body)
-['dblclick', 'ondblclick'].forEach(evt => {
-  window.addEventListener(evt, () => toggleFullscreen(), true);
-  document.addEventListener(evt, () => toggleFullscreen(), true);
 });
 
 // 'F' key or 'F11' key to toggle fullscreen
 document.addEventListener('keydown', (e) => {
   if (e.key === 'f' || e.key === 'F' || e.key === 'F11') {
     e.preventDefault();
-    toggleFullscreen();
+    toggleFullscreen(e);
   }
 });
-
-function toggleFullscreen() {
-  const elem = document.documentElement;
-  if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch((err) => console.warn('FS request notice:', err));
-    } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen().catch((err) => console.warn('FS request notice:', err));
-    } else if (elem.mozRequestFullScreen) {
-      elem.mozRequestFullScreen().catch((err) => console.warn('FS request notice:', err));
-    } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen().catch((err) => console.warn('FS request notice:', err));
-    }
-  } else {
-    if (document.exitFullscreen) {
-      document.exitFullscreen().catch(() => {});
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen().catch(() => {});
-    } else if (document.mozCancelFullScreen) {
-      document.mozCancelFullScreen().catch(() => {});
-    } else if (document.msExitFullscreen) {
-      document.msExitFullscreen().catch(() => {});
-    }
-  }
-}
-
-function enterFullscreen() {
-  const elem = document.documentElement;
-  if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch(() => {});
-    } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen().catch(() => {});
-    }
-  }
-}
-
-function renderFullscreenButton() {
-  let btn = document.getElementById('fullscreen-toggle-btn');
-  if (!btn) {
-    btn = document.createElement('button');
-    btn.id = 'fullscreen-toggle-btn';
-    btn.className = 'fullscreen-toggle-btn';
-    btn.setAttribute('tabindex', '-1');
-    btn.innerHTML = '⛶ Fullscreen';
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      toggleFullscreen();
-    };
-    document.body.appendChild(btn);
-  }
-}
 
 // Remote-Friendly First Page Branch Selection Screen (Big Beautiful Centered Cards)
 function showBranchSelectionScreen() {
@@ -470,12 +398,22 @@ function toggleFullscreen(e) {
   }
 }
 
-document.addEventListener('dblclick', toggleFullscreen, { passive: false });
-window.addEventListener('dblclick', toggleFullscreen, { passive: false });
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'f' || e.key === 'F') {
-    toggleFullscreen(e);
+// Double-click anywhere to enter fullscreen (ESC to exit)
+document.addEventListener('dblclick', (e) => {
+  const doc = document;
+  const isFS = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+  if (!isFS) {
+    // Only enter — never exit on dblclick (ESC exits)
+    const docEl = doc.documentElement;
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen().catch(err => console.warn('Fullscreen:', err));
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen();
+    } else if (docEl.mozRequestFullScreen) {
+      docEl.mozRequestFullScreen();
+    } else if (docEl.msRequestFullscreen) {
+      docEl.msRequestFullscreen();
+    }
   }
 });
 
