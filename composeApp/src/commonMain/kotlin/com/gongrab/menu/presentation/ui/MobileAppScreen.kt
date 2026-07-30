@@ -560,27 +560,15 @@ fun MobileCategoriesView(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Button(
-                                onClick = { categoryForSvgPicker = cat },
-                                colors = ButtonDefaults.buttonColors(containerColor = LeafGreen.copy(alpha = 0.15f), contentColor = LeafGreen),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, LeafGreen),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                            ) {
-                                Icon(Icons.Default.Star, contentDescription = "SVG", modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("🎬 Pick Animated SVG", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            TextButton(onClick = { editingCategory = cat; showCategoryDialog = true }) {
+                                Text("Edit", color = LeafGreen, fontWeight = FontWeight.Bold)
                             }
-
-                            Row {
-                                TextButton(onClick = { editingCategory = cat; showCategoryDialog = true }) {
-                                    Text("Edit", color = Color.White, fontWeight = FontWeight.Bold)
-                                }
-                                TextButton(onClick = { coroutineScope.launch { repository.deleteCategory(cat.id) } }) {
-                                    Text("Delete", color = Color(0xFFEF4444))
-                                }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            TextButton(onClick = { coroutineScope.launch { repository.deleteCategory(cat.id) } }) {
+                                Text("Delete", color = Color(0xFFEF4444))
                             }
                         }
                     }
