@@ -210,11 +210,11 @@ html, body {
   align-items: center;
 }
 
-.branch-card-big:hover, .branch-card-big:focus {
-  background: linear-gradient(145deg, rgba(158, 201, 86, 0.2) 0%, rgba(158, 201, 86, 0.05) 100%);
+.branch-card-big:hover, .branch-card-big:focus, .branch-card-big.focused-remote {
+  background: linear-gradient(145deg, rgba(158, 201, 86, 0.25) 0%, rgba(158, 201, 86, 0.08) 100%);
   border-color: var(--logo-green);
-  transform: translateY(-8px) scale(1.06);
-  box-shadow: 0 20px 50px rgba(158, 201, 86, 0.4);
+  transform: translateY(-8px) scale(1.08);
+  box-shadow: 0 20px 50px rgba(158, 201, 86, 0.5);
   outline: none;
 }
 
@@ -233,8 +233,11 @@ html, body {
   transition: transform 0.3s ease;
 }
 
-.branch-card-big:hover .branch-card-icon, .branch-card-big:focus .branch-card-icon {
-  transform: scale(1.12) rotate(4deg);
+.branch-card-big:hover .branch-card-icon, 
+.branch-card-big:focus .branch-card-icon,
+.branch-card-big.focused-remote .branch-card-icon {
+  transform: scale(1.15) rotate(4deg);
+  background: rgba(158, 201, 86, 0.25);
 }
 
 .branch-card-title {

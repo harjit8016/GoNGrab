@@ -109,27 +109,99 @@ async function fetchAndRenderBranches() {
       container.appendChild(card);
     });
 
-    // Auto-focus first card for TV Remote D-Pad control
-    const firstCard = container.querySelector('.branch-card-big');
-    if (firstCard) firstCard.focus();
+    // Setup Keyboard & TV Remote D-Pad Navigation Engine
+    setupDpadNavigation();
 
   } catch (err) {
     console.error('Error fetching branches:', err);
     container.innerHTML = `
-      <div class="branch-card-big" tabindex="0" onclick="selectBranch('branch_1')">
+      <div class="branch-card-big" tabindex="0" data-branch-id="branch_1" onclick="selectBranch('branch_1')">
         <div class="branch-card-icon">🏬</div>
         <div class="branch-card-title">Branch 1</div>
         <div class="branch-card-address">Main Branch TV Board</div>
         <div class="branch-card-btn-indicator">ENTER MENU ➔</div>
       </div>
-      <div class="branch-card-big" tabindex="0" onclick="selectBranch('branch_2')">
+      <div class="branch-card-big" tabindex="0" data-branch-id="branch_2" onclick="selectBranch('branch_2')">
         <div class="branch-card-icon">🏪</div>
         <div class="branch-card-title">Branch 2</div>
         <div class="branch-card-address">Secondary Branch TV Board</div>
         <div class="branch-card-btn-indicator">ENTER MENU ➔</div>
       </div>
     `;
+    setupDpadNavigation();
   }
+}
+
+let currentFocusedIndex = 0;
+
+function setupDpadNavigation() {
+  const cardsList = Array.from(document.querySelectorAll('.branch-card-big'));
+  if (!cardsList || cardsList.length === 0) return;
+
+  currentFocusedIndex = 0;
+  updateCardFocus(cardsList);
+
+  const handleDpadKey = (e) => {
+    const overlay = document.getElementById('branch-select-modal');
+    if (!overlay || overlay.style.display === 'none') return;
+
+    const cards = Array.from(document.querySelectorAll('.branch-card-big'));
+    if (cards.length === 0) return;
+
+    const key = e.key;
+    const keyCode = e.keyCode;
+
+    // Arrow Left / D-Pad Left (Key 37, 21)
+    if (key === 'ArrowLeft' || key === 'Left' || keyCode === 37 || keyCode === 21) {
+      e.preventDefault();
+      currentFocusedIndex = (currentFocusedIndex - 1 + cards.length) % cards.length;
+      updateCardFocus(cards);
+    }
+    // Arrow Right / D-Pad Right (Key 39, 22)
+    else if (key === 'ArrowRight' || key === 'Right' || keyCode === 39 || keyCode === 22) {
+      e.preventDefault();
+      currentFocusedIndex = (currentFocusedIndex + 1) % cards.length;
+      updateCardFocus(cards);
+    }
+    // Arrow Up / D-Pad Up (Key 38, 19)
+    else if (key === 'ArrowUp' || key === 'Up' || keyCode === 38 || keyCode === 19) {
+      e.preventDefault();
+      currentFocusedIndex = (currentFocusedIndex - 1 + cards.length) % cards.length;
+      updateCardFocus(cards);
+    }
+    // Arrow Down / D-Pad Down (Key 40, 20)
+    else if (key === 'ArrowDown' || key === 'Down' || keyCode === 40 || keyCode === 20) {
+      e.preventDefault();
+      currentFocusedIndex = (currentFocusedIndex + 1) % cards.length;
+      updateCardFocus(cards);
+    }
+    // Enter / Space / D-Pad OK Center (Key 13, 23, 66)
+    else if (key === 'Enter' || key === ' ' || keyCode === 13 || keyCode === 23 || keyCode === 66) {
+      e.preventDefault();
+      const targetCard = cards[currentFocusedIndex];
+      if (targetCard) {
+        const branchId = targetCard.getAttribute('data-branch-id');
+        if (branchId) selectBranch(branchId);
+      }
+    }
+  };
+
+  if (window._dpadHandler) {
+    document.removeEventListener('keydown', window._dpadHandler);
+  }
+  window._dpadHandler = handleDpadKey;
+  document.addEventListener('keydown', window._dpadHandler);
+}
+
+function updateCardFocus(cardsList) {
+  cardsList.forEach((card, i) => {
+    if (i === currentFocusedIndex) {
+      card.classList.add('focused-remote');
+      try { card.focus(); } catch (err) {}
+    } else {
+      card.classList.remove('focused-remote');
+    }
+  });
 }
 
 function selectBranch(branchId) {
