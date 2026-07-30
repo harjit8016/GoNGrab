@@ -1,6 +1,5 @@
 let urlBranchParam = getQueryParam('branch');
-// If URL has ?branch=branch_1, use it directly. Otherwise, ALWAYS ask for branch selection on launch!
-let currentBranchId = urlBranchParam || null;
+let currentBranchId = null; // ALWAYS prompt for branch selection on launch!
 let menuData = [];
 let itemsUnsubscribe = null;
 
@@ -15,11 +14,8 @@ const firebaseConfig = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  if (urlBranchParam) {
-    initLiveDbListener();
-  } else {
-    showBranchSelectionScreen();
-  }
+  // ALWAYS show Branch Selection Screen on startup!
+  showBranchSelectionScreen();
 
   // Fullscreen trigger on first interaction
   const triggerAutoFs = () => {
