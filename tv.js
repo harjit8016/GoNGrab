@@ -16,18 +16,6 @@ const firebaseConfig = {
 document.addEventListener('DOMContentLoaded', async () => {
   // ALWAYS show Branch Selection Screen on startup!
   showBranchSelectionScreen();
-
-  // Auto-enter fullscreen on first interaction
-  const triggerAutoFs = (e) => {
-    // Don't trigger on the branch selection buttons
-    if (e.target && e.target.closest && e.target.closest('.branch-btn, .modal, button')) return;
-    toggleFullscreen(e);
-    document.removeEventListener('click', triggerAutoFs);
-    document.removeEventListener('touchstart', triggerAutoFs);
-  };
-
-  document.addEventListener('click', triggerAutoFs);
-  document.addEventListener('touchstart', triggerAutoFs);
 });
 
 // 'F' key or 'F11' key to toggle fullscreen
@@ -410,12 +398,22 @@ function toggleFullscreen(e) {
   }
 }
 
-document.addEventListener('dblclick', toggleFullscreen, { passive: false });
-window.addEventListener('dblclick', toggleFullscreen, { passive: false });
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'f' || e.key === 'F') {
-    toggleFullscreen(e);
+// Double-click anywhere to enter fullscreen (ESC to exit)
+document.addEventListener('dblclick', (e) => {
+  const doc = document;
+  const isFS = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+  if (!isFS) {
+    // Only enter — never exit on dblclick (ESC exits)
+    const docEl = doc.documentElement;
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen().catch(err => console.warn('Fullscreen:', err));
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen();
+    } else if (docEl.mozRequestFullScreen) {
+      docEl.mozRequestFullScreen();
+    } else if (docEl.msRequestFullscreen) {
+      docEl.msRequestFullscreen();
+    }
   }
 });
 
