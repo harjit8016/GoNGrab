@@ -31,7 +31,9 @@ data class MenuItem(
     val categoryName: String = "",
     val defaultPrice: Double = 0.0,
     val branches: Map<String, BranchPriceConfig> = emptyMap(),
-    val displayOrder: Int = 999
+    val displayOrder: Int = 999,
+    val animatedSvg: String = "",
+    val iconKey: String = ""
 )
 
 @Serializable

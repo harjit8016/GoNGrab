@@ -1,65 +1,49 @@
 package com.gongrab.tv
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
-import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.appcompat.app.AppCompatActivity
+import android.view.View
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import dev.gitlive.firebase.Firebase
+import dev.gitlive.firebase.initialize
+import dev.gitlive.firebase.FirebaseOptions
+import com.gongrab.menu.data.repository.FirebaseMenuRepositoryImpl
+import com.gongrab.tv.ui.TvApp
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
-    private lateinit var webView: WebView
-    private val tvMenuUrl = "file:///android_asset/tv.html"
-
-
-    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Keep Screen On continuously for TV display
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        // Set Fullscreen Immersive Mode
-        hideSystemUI()
+        // Remove hideSystemUI from here
 
-        webView = WebView(this).apply {
-            layoutParams = android.view.ViewGroup.LayoutParams(
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                android.view.ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            settings.apply {
-                javaScriptEnabled = true
-                domStorageEnabled = true
-                databaseEnabled = true
-                allowFileAccess = true
-                allowContentAccess = true
-                useWideViewPort = true
-                loadWithOverviewMode = true
-                mediaPlaybackRequiresUserGesture = false
-                mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                cacheMode = WebSettings.LOAD_DEFAULT
-            }
-            webViewClient = object : WebViewClient() {
-                override fun onReceivedError(
-                    view: WebView?,
-                    errorCode: Int,
-                    description: String?,
-                    failingUrl: String?
-                ) {
-                    // Retry loading after any error
-                    view?.postDelayed({ view.loadUrl(tvMenuUrl) }, 5000)
-                }
-            }
+        val options = FirebaseOptions(
+            projectId = "grabngo-b5778",
+            applicationId = "1:123456789012:android:a1b2c3d4e5f6", // Dummy required field
+            apiKey = "dummy-api-key" // Dummy required field
+        )
+        Firebase.initialize(this, options)
+        val repository = FirebaseMenuRepositoryImpl()
+
+        setContent {
+            TvApp(repository = repository)
         }
-
-        setContentView(webView)
-        webView.loadUrl(tvMenuUrl)
+        
+        // Set Fullscreen Immersive Mode after setting content
+        hideSystemUI()
     }
 
     override fun onResume() {
@@ -83,15 +67,6 @@ class MainActivity : AppCompatActivity() {
                 or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             )
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack()
-        } else {
-            super.onBackPressed()
         }
     }
 }
