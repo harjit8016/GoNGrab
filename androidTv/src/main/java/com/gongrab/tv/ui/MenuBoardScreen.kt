@@ -296,10 +296,11 @@ fun AnimatedSvgView(
                 <html style="margin: 0; padding: 0; background: transparent; overflow: hidden; width: 100%; height: 100%;">
                 <head>
                     <style>
-                        svg {
+                        svg, .cat-title-svg, .cat-animated-svg {
                             width: 100%;
                             height: 100%;
                             display: block;
+                            filter: drop-shadow(0 2px 6px rgba(158, 201, 86, 0.55));
                         }
                     </style>
                 </head>
