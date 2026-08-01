@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "104883703989340978347",
+    "project_id": "grabngo-b5778",
+    "storage_bucket": "grabngo-b5778.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:104883703989340978347:android:com_gongrab_menu",
+        "android_client_info": {
+          "package_name": "com.gongrab.menu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyGrabNGoAppKey"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -46,6 +46,34 @@ function slugify(text) {
 // API ENDPOINTS (Firestore + Resilient Offline Local Fallback)
 // --------------------------------------------------------------------------
 
+// 0. Get full live dataset (Branches, Categories, Items) directly from Firebase Firestore
+app.get('/api/data', async (req, res) => {
+  try {
+    let branches = [], categories = [], items = [];
+    if (db) {
+      const bSnap = await db.collection('branches').get();
+      bSnap.forEach(doc => branches.push({ id: doc.id, ...doc.data() }));
+
+      const cSnap = await db.collection('categories').orderBy('displayOrder', 'asc').get();
+      cSnap.forEach(doc => categories.push({ id: doc.id, ...doc.data() }));
+
+      const iSnap = await db.collection('items').get();
+      iSnap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+    }
+    const cache = getLocalCache();
+    res.json({
+      branches: branches.length > 0 ? branches : cache.branches,
+      categories: categories.length > 0 ? categories : cache.categories,
+      items: items.length > 0 ? items : cache.items,
+      animatedSvgPack: cache.animatedSvgPack || []
+    });
+  } catch (err) {
+    console.warn('Firestore fallback triggered for /api/data:', err.message);
+    const cache = getLocalCache();
+    res.json(cache);
+  }
+});
+
 // 1. Get all branches
 app.get('/api/branches', async (req, res) => {
   try {
@@ -396,6 +424,6 @@ app.delete('/api/items/:id', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Resilient Restaurant Menu Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Resilient Restaurant Menu Server running on http://0.0.0.0:${PORT}`);
 });

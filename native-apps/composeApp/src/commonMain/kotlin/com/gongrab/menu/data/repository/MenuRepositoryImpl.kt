@@ -65,6 +65,14 @@ class MenuRepositoryImpl(
     }
 
     override suspend fun reloadData() {
+        // Force live network fetch from Firebase/Express backend server FIRST
+        val networkSuccess = loadFromNetworkOrSeed()
+        if (networkSuccess) {
+            println("✓ Successfully loaded live data from backend server")
+            return
+        }
+
+        // Fall back to local disk cache only if network fetch fails completely
         try {
             val targetFile = findValidDataFile()
             if (targetFile != null) {
@@ -74,7 +82,7 @@ class MenuRepositoryImpl(
                 _categories.value = cache.categories
                 _items.value = cache.items
                 _animatedSvgPack.value = cache.animatedSvgPack
-                println("✓ Loaded ${_items.value.size} items from local file system cache")
+                println("✓ Loaded ${_items.value.size} items from local file system fallback cache")
             } else {
                 _branches.value = defaultBranches()
             }
@@ -82,26 +90,26 @@ class MenuRepositoryImpl(
             println("Error loading local menu data file: ${e.message}")
             _branches.value = defaultBranches()
         }
-
-        // Fetch from network (GitHub live endpoint / Local server / Seed fallback)
-        loadFromNetworkOrSeed()
     }
 
-    private fun loadFromNetworkOrSeed() {
+    private fun loadFromNetworkOrSeed(): Boolean {
         val hostCandidates = listOf(
+            "http://127.0.0.1:3000",
+            "http://172.20.10.4:3000",
             "http://localhost:3000",
-            "http://10.0.2.2:3000",
-            "http://172.20.10.4:3000"
+            "http://10.0.2.2:3000"
         )
 
-        // 1. Try fetching from live local/network Express REST API server first
+        // Try fetching from live local/network Express REST API server
         for (host in hostCandidates) {
             try {
+                println("Network try: $host/api/data...")
                 val dataUrl = java.net.URI("$host/api/data").toURL()
                 val conn = dataUrl.openConnection() as java.net.HttpURLConnection
-                conn.connectTimeout = 3000
+                conn.connectTimeout = 4000
                 conn.readTimeout = 4000
-                if (conn.responseCode == 200) {
+                val code = conn.responseCode
+                if (code == 200) {
                     val text = conn.inputStream.bufferedReader().use { it.readText() }
                     val cache = json.decodeFromString<MenuDataCache>(text)
                     if (cache.items.isNotEmpty()) {
@@ -109,45 +117,18 @@ class MenuRepositoryImpl(
                         _categories.value = cache.categories
                         _items.value = cache.items
                         _animatedSvgPack.value = cache.animatedSvgPack
-                        println("✓ Loaded ${cache.items.size} live items from server $host/api/data")
-                        return
+                        println("✓ SUCCESS: Loaded ${cache.items.size} live items directly from main database server ($host/api/data)")
+                        return true
                     }
+                } else {
+                    println("Network response code from $host/api/data: $code")
                 }
             } catch (e: Exception) {
-                // Try next host candidate
+                println("Network exception for $host: ${e.message}")
             }
         }
 
-        // 2. Try fetching from live GitHub URL (public fallback)
-        try {
-            val liveUrl = java.net.URI("https://harjit8016.github.io/GoNGrab/data.json").toURL()
-            val conn = liveUrl.openConnection() as java.net.HttpURLConnection
-            conn.connectTimeout = 4000
-            conn.readTimeout = 4000
-            if (conn.responseCode == 200) {
-                val text = conn.inputStream.bufferedReader().use { it.readText() }
-                val cache = json.decodeFromString<MenuDataCache>(text)
-                if (cache.items.isNotEmpty()) {
-                    _branches.value = cache.branches.ifEmpty { defaultBranches() }
-                    _categories.value = cache.categories
-                    _items.value = cache.items
-                    _animatedSvgPack.value = cache.animatedSvgPack
-                    println("✓ Loaded ${cache.items.size} items from GitHub live server URL")
-                    return
-                }
-            }
-        } catch (e: Exception) {
-            println("GitHub live fetch notice: ${e.message}")
-        }
-
-        // 3. Fallback to embedded seed data if network items are still empty
-        if (_items.value.isEmpty()) {
-            println("Loading embedded seed data fallback...")
-            val (seedCats, seedItems) = getSeedFallbackData()
-            _categories.value = seedCats
-            _items.value = seedItems
-            _branches.value = defaultBranches()
-        }
+        return false
     }
 
     private fun sendApiSync(endpointPath: String, method: String, jsonBody: String? = null) {

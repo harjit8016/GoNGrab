@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.jetbrains.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.application)
 }
 
 kotlin {
@@ -53,7 +53,9 @@ android {
     compileSdk = 34
 
     defaultConfig {
+        applicationId = "com.gongrab.menu"
         minSdk = 23
+        targetSdk = 34
     }
 
     packaging {

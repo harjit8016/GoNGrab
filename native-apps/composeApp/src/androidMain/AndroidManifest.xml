@@ -8,6 +8,7 @@
         android:allowBackup="true"
         android:label="Go N Grab Menu"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@android:style/Theme.Material.NoActionBar">
 
         <activity
