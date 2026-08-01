@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fullscreen theme: no ActionBar, no title bar, no status bar -->
+    <style name="Theme.GngTv" parent="android:Theme.Black.NoTitleBar.Fullscreen">
+    </style>
+</resources>

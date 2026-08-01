@@ -6,7 +6,8 @@
 
     <application
         android:allowBackup="true"
-        android:label="Go N Grab Menu"
+        android:icon="@mipmap/ic_launcher"
+        android:label="GNG MENU"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:theme="@android:style/Theme.Material.NoActionBar">
