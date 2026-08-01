@@ -79,19 +79,40 @@ class FirebaseMenuRepositoryImpl : MenuRepository {
         }
     }
 
-    // Write operations are generally not needed for the TV display app (read-only)
-    override suspend fun addBranch(branch: Branch) {}
-    override suspend fun updateBranch(branch: Branch) {}
-    override suspend fun deleteBranch(branchId: String) {}
-    override suspend fun duplicateBranch(sourceBranchId: String, newBranch: Branch) {}
+    override suspend fun addBranch(branch: Branch) {
+        try { firestore.collection("branches").document(branch.id).set(branch) } catch (e: Exception) { println("Firestore addBranch error: ${e.message}") }
+    }
+    override suspend fun updateBranch(branch: Branch) {
+        try { firestore.collection("branches").document(branch.id).set(branch) } catch (e: Exception) { println("Firestore updateBranch error: ${e.message}") }
+    }
+    override suspend fun deleteBranch(branchId: String) {
+        try { firestore.collection("branches").document(branchId).delete() } catch (e: Exception) { println("Firestore deleteBranch error: ${e.message}") }
+    }
+    override suspend fun duplicateBranch(sourceBranchId: String, newBranch: Branch) {
+        try { firestore.collection("branches").document(newBranch.id).set(newBranch) } catch (e: Exception) { println("Firestore duplicateBranch error: ${e.message}") }
+    }
 
-    override suspend fun addCategory(category: Category) {}
-    override suspend fun updateCategory(category: Category) {}
-    override suspend fun deleteCategory(categoryId: String) {}
+    override suspend fun addCategory(category: Category) {
+        try { firestore.collection("categories").document(category.id).set(category) } catch (e: Exception) { println("Firestore addCategory error: ${e.message}") }
+    }
+    override suspend fun updateCategory(category: Category) {
+        try { firestore.collection("categories").document(category.id).set(category) } catch (e: Exception) { println("Firestore updateCategory error: ${e.message}") }
+    }
+    override suspend fun deleteCategory(categoryId: String) {
+        try { firestore.collection("categories").document(categoryId).delete() } catch (e: Exception) { println("Firestore deleteCategory error: ${e.message}") }
+    }
 
-    override suspend fun addMenuItem(item: MenuItem) {}
-    override suspend fun updateMenuItem(item: MenuItem) {}
-    override suspend fun deleteMenuItem(itemId: String) {}
+    override suspend fun addMenuItem(item: MenuItem) {
+        try { firestore.collection("items").document(item.id).set(item) } catch (e: Exception) { println("Firestore addMenuItem error: ${e.message}") }
+    }
+    override suspend fun updateMenuItem(item: MenuItem) {
+        try { firestore.collection("items").document(item.id).set(item) } catch (e: Exception) { println("Firestore updateMenuItem error: ${e.message}") }
+    }
+    override suspend fun deleteMenuItem(itemId: String) {
+        try { firestore.collection("items").document(itemId).delete() } catch (e: Exception) { println("Firestore deleteMenuItem error: ${e.message}") }
+    }
 
-    override suspend fun saveAnimatedSvgToPack(item: AnimatedSvgItem) {}
+    override suspend fun saveAnimatedSvgToPack(item: AnimatedSvgItem) {
+        try { firestore.collection("animatedSvgPack").document(item.id).set(item) } catch (e: Exception) { println("Firestore saveAnimatedSvgToPack error: ${e.message}") }
+    }
 }

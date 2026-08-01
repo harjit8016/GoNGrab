@@ -88,12 +88,42 @@ class MenuRepositoryImpl(
     }
 
     private fun loadFromNetworkOrSeed() {
-        // 1. Try fetching from live GitHub URL (accessible anywhere on mobile internet / Wi-Fi)
+        val hostCandidates = listOf(
+            "http://localhost:3000",
+            "http://10.0.2.2:3000",
+            "http://172.20.10.4:3000"
+        )
+
+        // 1. Try fetching from live local/network Express REST API server first
+        for (host in hostCandidates) {
+            try {
+                val dataUrl = java.net.URI("$host/api/data").toURL()
+                val conn = dataUrl.openConnection() as java.net.HttpURLConnection
+                conn.connectTimeout = 3000
+                conn.readTimeout = 4000
+                if (conn.responseCode == 200) {
+                    val text = conn.inputStream.bufferedReader().use { it.readText() }
+                    val cache = json.decodeFromString<MenuDataCache>(text)
+                    if (cache.items.isNotEmpty()) {
+                        _branches.value = cache.branches.ifEmpty { defaultBranches() }
+                        _categories.value = cache.categories
+                        _items.value = cache.items
+                        _animatedSvgPack.value = cache.animatedSvgPack
+                        println("✓ Loaded ${cache.items.size} live items from server $host/api/data")
+                        return
+                    }
+                }
+            } catch (e: Exception) {
+                // Try next host candidate
+            }
+        }
+
+        // 2. Try fetching from live GitHub URL (public fallback)
         try {
             val liveUrl = java.net.URI("https://harjit8016.github.io/GoNGrab/data.json").toURL()
             val conn = liveUrl.openConnection() as java.net.HttpURLConnection
-            conn.connectTimeout = 6000
-            conn.readTimeout = 6000
+            conn.connectTimeout = 4000
+            conn.readTimeout = 4000
             if (conn.responseCode == 200) {
                 val text = conn.inputStream.bufferedReader().use { it.readText() }
                 val cache = json.decodeFromString<MenuDataCache>(text)
@@ -102,7 +132,7 @@ class MenuRepositoryImpl(
                     _categories.value = cache.categories
                     _items.value = cache.items
                     _animatedSvgPack.value = cache.animatedSvgPack
-                    println("✓ Loaded ${cache.items.size} items directly from GitHub live server URL")
+                    println("✓ Loaded ${cache.items.size} items from GitHub live server URL")
                     return
                 }
             }
@@ -110,31 +140,46 @@ class MenuRepositoryImpl(
             println("GitHub live fetch notice: ${e.message}")
         }
 
-        // 2. Try fetching from localhost:3000 (for local node backend server)
-        try {
-            val itemUrl = java.net.URI("http://localhost:3000/api/items").toURL()
-            val itemConn = itemUrl.openConnection() as java.net.HttpURLConnection
-            itemConn.connectTimeout = 3000
-            itemConn.readTimeout = 3000
-            if (itemConn.responseCode == 200) {
-                val text = itemConn.inputStream.bufferedReader().use { it.readText() }
-                val fetchedItems = json.decodeFromString<List<MenuItem>>(text)
-                if (fetchedItems.isNotEmpty()) {
-                    _items.value = fetchedItems
-                    println("✓ Loaded ${fetchedItems.size} items directly from local Express server")
-                }
-            }
-        } catch (e: Exception) {
-            println("Localhost server fetch notice: ${e.message}")
-        }
-
-        // 3. Fallback to seed data if items are still empty
+        // 3. Fallback to embedded seed data if network items are still empty
         if (_items.value.isEmpty()) {
             println("Loading embedded seed data fallback...")
             val (seedCats, seedItems) = getSeedFallbackData()
             _categories.value = seedCats
             _items.value = seedItems
             _branches.value = defaultBranches()
+        }
+    }
+
+    private fun sendApiSync(endpointPath: String, method: String, jsonBody: String? = null) {
+        scope.launch(Dispatchers.IO) {
+            val hostCandidates = listOf(
+                "http://localhost:3000",
+                "http://10.0.2.2:3000",
+                "http://172.20.10.4:3000"
+            )
+            for (host in hostCandidates) {
+                try {
+                    val url = java.net.URI("$host$endpointPath").toURL()
+                    val conn = url.openConnection() as java.net.HttpURLConnection
+                    conn.requestMethod = method
+                    conn.connectTimeout = 4000
+                    conn.readTimeout = 4000
+                    if (jsonBody != null) {
+                        conn.doOutput = true
+                        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
+                        conn.outputStream.use { os ->
+                            os.write(jsonBody.toByteArray(Charsets.UTF_8))
+                        }
+                    }
+                    val code = conn.responseCode
+                    if (code in 200..299) {
+                        println("✓ REST API sync $method $endpointPath succeeded on $host ($code)")
+                        break
+                    }
+                } catch (e: Exception) {
+                    // try next candidate
+                }
+            }
         }
     }
 
@@ -178,11 +223,15 @@ class MenuRepositoryImpl(
     override suspend fun addBranch(branch: Branch) {
         _branches.value = _branches.value + branch
         saveToDisk()
+        val body = json.encodeToString(Branch.serializer(), branch)
+        sendApiSync("/api/branches", "POST", body)
     }
 
     override suspend fun updateBranch(branch: Branch) {
         _branches.value = _branches.value.map { if (it.id == branch.id) branch else it }
         saveToDisk()
+        val body = json.encodeToString(Branch.serializer(), branch)
+        sendApiSync("/api/branches/${branch.id}", "PUT", body)
     }
 
     override suspend fun deleteBranch(branchId: String) {
@@ -191,6 +240,7 @@ class MenuRepositoryImpl(
             item.copy(branches = item.branches.filterKeys { it != branchId })
         }
         saveToDisk()
+        sendApiSync("/api/branches/$branchId", "DELETE")
     }
 
     override suspend fun duplicateBranch(sourceBranchId: String, newBranch: Branch) {
@@ -208,36 +258,55 @@ class MenuRepositoryImpl(
         }
 
         saveToDisk()
+        val payload = json.encodeToString(
+            kotlinx.serialization.json.JsonObject.serializer(),
+            kotlinx.serialization.json.buildJsonObject {
+                put("sourceBranchId", kotlinx.serialization.json.JsonPrimitive(sourceBranchId))
+                put("name", kotlinx.serialization.json.JsonPrimitive(newBranch.name))
+                put("code", kotlinx.serialization.json.JsonPrimitive(newBranch.id.uppercase()))
+            }
+        )
+        sendApiSync("/api/branches/duplicate", "POST", payload)
     }
 
     override suspend fun addCategory(category: Category) {
         _categories.value = _categories.value + category
         saveToDisk()
+        val body = json.encodeToString(Category.serializer(), category)
+        sendApiSync("/api/categories", "POST", body)
     }
 
     override suspend fun updateCategory(category: Category) {
         _categories.value = _categories.value.map { if (it.id == category.id) category else it }
         saveToDisk()
+        val body = json.encodeToString(Category.serializer(), category)
+        sendApiSync("/api/categories", "POST", body)
     }
 
     override suspend fun deleteCategory(categoryId: String) {
         _categories.value = _categories.value.filter { it.id != categoryId }
         saveToDisk()
+        sendApiSync("/api/categories/$categoryId", "DELETE")
     }
 
     override suspend fun addMenuItem(item: MenuItem) {
         _items.value = _items.value + item
         saveToDisk()
+        val body = json.encodeToString(MenuItem.serializer(), item)
+        sendApiSync("/api/items", "POST", body)
     }
 
     override suspend fun updateMenuItem(item: MenuItem) {
         _items.value = _items.value.map { if (it.id == item.id) item else it }
         saveToDisk()
+        val body = json.encodeToString(MenuItem.serializer(), item)
+        sendApiSync("/api/items", "POST", body)
     }
 
     override suspend fun deleteMenuItem(itemId: String) {
         _items.value = _items.value.filter { it.id != itemId }
         saveToDisk()
+        sendApiSync("/api/items/$itemId", "DELETE")
     }
 
     private fun getSeedFallbackData(): Pair<List<Category>, List<MenuItem>> {
