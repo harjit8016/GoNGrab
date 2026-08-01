@@ -2190,19 +2190,25 @@
       "defaultPrice": 219,
       "itemId": "shake_strawberry_shak",
       "displayOrder": 999,
+      "categoryName": "Shake",
+      "categoryId": "shake",
       "name": "Strawberry Shake kachalu",
       "branches": {
-        "branch_1": {
+        "branch_2": {
+          "isAvailable": true,
           "price": 219,
           "available": true
         },
-        "branch_2": {
-          "price": 219,
-          "available": true
+        "branch_1": {
+          "isAvailable": true,
+          "available": true,
+          "price": 219
         }
       },
-      "categoryName": "Shake",
-      "categoryId": "shake"
+      "updatedAt": {
+        "_seconds": 1785576787,
+        "_nanoseconds": 930000000
+      }
     },
     {
       "id": "shake_vanilla_shake",

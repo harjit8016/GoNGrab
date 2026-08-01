@@ -56,6 +56,8 @@ android {
         applicationId = "com.gongrab.menu"
         minSdk = 23
         targetSdk = 34
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
     packaging {
@@ -67,6 +69,7 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
