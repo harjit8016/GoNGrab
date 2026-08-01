@@ -4,7 +4,7 @@ const xlsx = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 
-const serviceAccountPath = path.join(__dirname, '../grabngo-b5778-firebase-adminsdk-fbsvc-ffc7ab1f34.json');
+const serviceAccountPath = path.join(__dirname, '../config/grabngo-b5778-firebase-adminsdk-fbsvc-ffc7ab1f34.json');
 
 if (!fs.existsSync(serviceAccountPath)) {
   console.error(`Service account key not found at ${serviceAccountPath}`);

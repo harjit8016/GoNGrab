@@ -7,3 +7,9 @@ grabngo-*.json
 build/
 composeApp/build/
 .kotlin/
+.vscode/
+native-apps/.gradle/
+native-apps/build/
+native-apps/*/build/
+native-apps/local.properties
+

@@ -97,7 +97,7 @@ function generateLocalCache() {
   }
 
   const cacheData = { branches, categories, items };
-  const cachePath = path.join(__dirname, '../data_cache.json');
+  const cachePath = path.join(__dirname, '../data/data_cache.json');
   fs.writeFileSync(cachePath, JSON.stringify(cacheData, null, 2));
   console.log(`✓ Local menu data cache generated cleanly at ${cachePath} with ${items.length} items.`);
 }

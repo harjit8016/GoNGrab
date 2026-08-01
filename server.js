@@ -10,11 +10,11 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'web')));
 
 // Initialize Firebase Admin SDK
-const serviceAccountPath = path.join(__dirname, 'grabngo-b5778-firebase-adminsdk-fbsvc-ffc7ab1f34.json');
-const localCachePath = path.join(__dirname, 'data_cache.json');
+const serviceAccountPath = path.join(__dirname, 'config', 'grabngo-b5778-firebase-adminsdk-fbsvc-ffc7ab1f34.json');
+const localCachePath = path.join(__dirname, 'data', 'data_cache.json');
 
 let db = null;
 if (fs.existsSync(serviceAccountPath)) {
