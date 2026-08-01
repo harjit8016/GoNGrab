@@ -49,26 +49,35 @@ function slugify(text) {
 // 0. Get full live dataset (Branches, Categories, Items) directly from Firebase Firestore
 app.get('/api/data', async (req, res) => {
   try {
-    let branches = [], categories = [], items = [];
-    if (db) {
-      const bSnap = await db.collection('branches').get();
-      bSnap.forEach(doc => branches.push({ id: doc.id, ...doc.data() }));
-
-      const cSnap = await db.collection('categories').orderBy('displayOrder', 'asc').get();
-      cSnap.forEach(doc => categories.push({ id: doc.id, ...doc.data() }));
-
-      const iSnap = await db.collection('items').get();
-      iSnap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
-    }
     const cache = getLocalCache();
-    res.json({
-      branches: branches.length > 0 ? branches : cache.branches,
-      categories: categories.length > 0 ? categories : cache.categories,
-      items: items.length > 0 ? items : cache.items,
-      animatedSvgPack: cache.animatedSvgPack || []
-    });
+    res.json(cache);
+
+    // Sync Firestore in background
+    if (db) {
+      Promise.all([
+        db.collection('branches').get(),
+        db.collection('categories').orderBy('displayOrder', 'asc').get(),
+        db.collection('items').get()
+      ]).then(([bSnap, cSnap, iSnap]) => {
+        const branches = [];
+        bSnap.forEach(doc => branches.push({ id: doc.id, ...doc.data() }));
+        const categories = [];
+        cSnap.forEach(doc => categories.push({ id: doc.id, ...doc.data() }));
+        const items = [];
+        iSnap.forEach(doc => items.push({ id: doc.id, ...doc.data() }));
+
+        if (branches.length > 0 && items.length > 0) {
+          const freshData = {
+            branches,
+            categories: categories.length > 0 ? categories : cache.categories,
+            items,
+            animatedSvgPack: cache.animatedSvgPack || []
+          };
+          fs.writeFileSync(localCachePath, JSON.stringify(freshData, null, 2));
+        }
+      }).catch(e => console.warn('Background Firestore sync notice:', e.message));
+    }
   } catch (err) {
-    console.warn('Firestore fallback triggered for /api/data:', err.message);
     const cache = getLocalCache();
     res.json(cache);
   }
