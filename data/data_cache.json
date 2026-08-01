@@ -392,17 +392,6 @@
       }
     },
     {
-      "id": "burgers_aaloo_tikki_burger",
-      "defaultPrice": 80,
-      "name": "Aalloo Tikki Burger",
-      "categoryName": "Burgers",
-      "categoryId": "burgers",
-      "updatedAt": {
-        "_seconds": 1785344178,
-        "_nanoseconds": 296000000
-      }
-    },
-    {
       "id": "burgers_chicken_burger",
       "defaultPrice": 210,
       "itemId": "burgers_chicken_burger",
@@ -2197,6 +2186,27 @@
       }
     },
     {
+      "id": "shake_strawberry_shak",
+      "defaultPrice": 219,
+      "itemId": "shake_strawberry_shak",
+      "displayOrder": 999,
+      "name": "Strawberry Shak",
+      "branches": {
+        "branch_1": {
+          "isAvailable": true,
+          "price": 219,
+          "available": true
+        },
+        "branch_2": {
+          "isAvailable": true,
+          "price": 219,
+          "available": true
+        }
+      },
+      "categoryName": "Shake",
+      "categoryId": "shake"
+    },
+    {
       "id": "shake_strawberry_shake",
       "defaultPrice": 219,
       "itemId": "shake_strawberry_shake",
@@ -2213,11 +2223,74 @@
       "categoryName": "Shake",
       "categoryId": "shake",
       "displayOrder": 999,
+      "name": "Strawberry Shake",
       "updatedAt": {
-        "_seconds": 1785479838,
-        "_nanoseconds": 460000000
+        "_seconds": 1785572790,
+        "_nanoseconds": 72000000
+      }
+    },
+    {
+      "id": "shake_strawberry_shake_aloo",
+      "defaultPrice": 219,
+      "itemId": "shake_strawberry_shake_aloo",
+      "displayOrder": 999,
+      "name": "Strawberry Shake aloo",
+      "branches": {
+        "branch_1": {
+          "isAvailable": true,
+          "price": 219,
+          "available": true
+        },
+        "branch_2": {
+          "isAvailable": true,
+          "price": 219,
+          "available": true
+        }
       },
-      "name": "Strawberry Shake"
+      "categoryName": "Shake",
+      "categoryId": "shake"
+    },
+    {
+      "id": "shake_strawberry_shake_bhalu",
+      "defaultPrice": 219,
+      "itemId": "shake_strawberry_shake_bhalu",
+      "displayOrder": 999,
+      "name": "Strawberry Shake bhalu",
+      "branches": {
+        "branch_1": {
+          "isAvailable": true,
+          "price": 219,
+          "available": true
+        },
+        "branch_2": {
+          "isAvailable": true,
+          "price": 219,
+          "available": true
+        }
+      },
+      "categoryName": "Shake",
+      "categoryId": "shake"
+    },
+    {
+      "id": "shake_strawberry_shakggghh",
+      "defaultPrice": 219,
+      "itemId": "shake_strawberry_shakggghh",
+      "displayOrder": 999,
+      "name": "Strawberry Shakggghh",
+      "branches": {
+        "branch_1": {
+          "isAvailable": true,
+          "price": 219,
+          "available": true
+        },
+        "branch_2": {
+          "isAvailable": true,
+          "price": 219,
+          "available": true
+        }
+      },
+      "categoryName": "Shake",
+      "categoryId": "shake"
     },
     {
       "id": "shake_vanilla_shake",

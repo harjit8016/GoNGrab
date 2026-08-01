@@ -267,7 +267,7 @@ class MenuRepositoryImpl(
         _items.value = _items.value.map { if (it.id == item.id) item else it }
         saveToDisk()
         val body = json.encodeToString(MenuItem.serializer(), item)
-        sendApiSync("/api/items", "POST", body)
+        sendApiSync("/api/items/${item.id}", "PUT", body)
     }
 
     override suspend fun deleteMenuItem(itemId: String) {

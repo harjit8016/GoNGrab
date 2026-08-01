@@ -281,12 +281,12 @@ app.get('/api/branches/:branchId/menu', async (req, res) => {
 // 6. Add new item
 app.post('/api/items', async (req, res) => {
   try {
-    const { name, categoryId, categoryName, defaultPrice, branchSelections } = req.body;
+    const { id, itemId: passedItemId, name, categoryId, categoryName, defaultPrice, branches, branchSelections } = req.body;
     if (!name || !categoryId || defaultPrice === undefined) {
       return res.status(400).json({ error: 'Name, Category, and Default Price are required' });
     }
 
-    const itemId = `${categoryId}_${slugify(name)}`;
+    const itemId = id || passedItemId || `${categoryId}_${slugify(name)}`;
     const priceVal = parseFloat(defaultPrice);
 
     const itemDoc = {
@@ -297,7 +297,7 @@ app.post('/api/items', async (req, res) => {
       categoryName: categoryName || categoryId,
       defaultPrice: priceVal,
       displayOrder: 999,
-      branches: branchSelections || {
+      branches: branches || branchSelections || {
         branch_1: { available: true, price: priceVal, isAvailable: true },
         branch_2: { available: true, price: priceVal, isAvailable: true }
       }
