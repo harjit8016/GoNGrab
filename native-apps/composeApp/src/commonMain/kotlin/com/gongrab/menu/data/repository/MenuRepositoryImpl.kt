@@ -336,7 +336,7 @@ class MenuRepositoryImpl(
             MenuItem("pst_2", "Red Sauce Pasta", "pasta", "Pasta", 170.0),
 
             MenuItem("wfl_1", "Nutella Waffle", "waffle", "Waffle", 160.0),
-            MenuItem("wfl_2", "Belgian Chocolate Waffle", "waffle", "Waffle", 170.0),
+            MenuItem("wfl_2", "Belgian Waffle", "waffle", "Waffle", 0.0),
 
             MenuItem("mmo_1", "Steamed Veg Momos", "momos", "Momos", 110.0),
             MenuItem("mmo_2", "Fried Paneer Momos", "momos", "Momos", 140.0),
