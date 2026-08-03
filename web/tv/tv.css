@@ -33,13 +33,13 @@ html, body {
   touch-action: none; /* Prevents browser double-tap-to-zoom from swallowing events */
 }
 
-/* Full Screen TV Container - TV Safe Area (Title & Action Safe Boundary) */
+/* Full Screen TV Container - Maximize Screen Usage (1.2vh 1.4vw tight padding) */
 .tv-board-grid {
   width: 100vw;
   height: 100vh;
-  padding: 3.5vh 3.5vw;
+  padding: 1.2vh 1.4vw;
   display: flex;
-  gap: 1.2vw;
+  gap: 1.0vw;
   overflow: hidden;
 }
 
