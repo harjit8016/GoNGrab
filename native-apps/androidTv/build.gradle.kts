@@ -17,10 +17,9 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        // Only build for arm64-v8a — covers 100% of modern Android TVs
-        // This alone removes ~30% of the APK by eliminating 3 unused ABI native libs
+        // Build for 64-bit (arm64-v8a) and 32-bit (armeabi-v7a) to support budget Smart TVs
         ndk {
-            abiFilters += listOf("arm64-v8a")
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
     }
 
