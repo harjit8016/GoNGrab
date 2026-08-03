@@ -44,7 +44,10 @@ class FirebaseMenuRepositoryImpl : MenuRepository {
         scope.launch {
             try {
                 firestore.collection("branches").snapshots.collect { querySnapshot ->
-                    _branches.value = querySnapshot.documents.map { it.data<Branch>() }
+                    _branches.value = querySnapshot.documents.map { doc ->
+                        val b = doc.data<Branch>()
+                        if (b.id.isBlank()) b.copy(id = doc.id) else b
+                    }
                 }
             } catch (e: Exception) {
                 println("Firebase sync error [branches]: ${e.message}")
@@ -56,7 +59,10 @@ class FirebaseMenuRepositoryImpl : MenuRepository {
             try {
                 firestore.collection("categories").snapshots.collect { querySnapshot ->
                     _categories.value = querySnapshot.documents
-                        .map { it.data<Category>() }
+                        .map { doc ->
+                            val c = doc.data<Category>()
+                            if (c.id.isBlank()) c.copy(id = doc.id) else c
+                        }
                         .sortedBy { it.displayOrder }
                 }
             } catch (e: Exception) {
@@ -70,7 +76,11 @@ class FirebaseMenuRepositoryImpl : MenuRepository {
                 firestore.collection("items")
                     .snapshots.collect { querySnapshot ->
                         _items.value = querySnapshot.documents
-                            .map { it.data<MenuItem>() }
+                            .map { doc ->
+                                val item = doc.data<MenuItem>()
+                                val finalId = if (item.id.isBlank()) doc.id else item.id
+                                item.copy(id = finalId)
+                            }
                             .sortedBy { it.displayOrder }
                     }
             } catch (e: Exception) {
@@ -103,10 +113,23 @@ class FirebaseMenuRepositoryImpl : MenuRepository {
     }
 
     override suspend fun addMenuItem(item: MenuItem) {
-        try { firestore.collection("items").document(item.id).set(item) } catch (e: Exception) { println("Firestore addMenuItem error: ${e.message}") }
+        val docId = item.id.ifBlank { "item_${kotlin.random.Random.nextLong(100000, 999999)}" }
+        val toSave = item.copy(id = docId)
+        try {
+            println("Firestore addMenuItem doc: $docId")
+            firestore.collection("items").document(docId).set(toSave)
+        } catch (e: Exception) {
+            println("Firestore addMenuItem error: ${e.message}")
+        }
     }
     override suspend fun updateMenuItem(item: MenuItem) {
-        try { firestore.collection("items").document(item.id).set(item) } catch (e: Exception) { println("Firestore updateMenuItem error: ${e.message}") }
+        if (item.id.isBlank()) return
+        try {
+            println("Firestore updateMenuItem doc: ${item.id} -> ${item.branches}")
+            firestore.collection("items").document(item.id).set(item)
+        } catch (e: Exception) {
+            println("Firestore updateMenuItem error [${item.id}]: ${e.message}")
+        }
     }
     override suspend fun deleteMenuItem(itemId: String) {
         try { firestore.collection("items").document(itemId).delete() } catch (e: Exception) { println("Firestore deleteMenuItem error: ${e.message}") }
