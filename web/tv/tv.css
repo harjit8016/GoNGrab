@@ -7,6 +7,8 @@
   --text-muted: #94a3b8;
   --line-divider: rgba(158, 201, 86, 0.3);
   --item-divider: rgba(255, 255, 255, 0.08);
+  /* Dynamic density scale computed by JS (Default: 1) */
+  --scale-factor: 1;
 }
 
 * {
@@ -31,13 +33,14 @@ html, body {
   touch-action: none; /* Prevents browser double-tap-to-zoom from swallowing events */
 }
 
-/* Full Screen TV Container - 100% Screen Height & Width Usage */
+/* Full Screen TV Container - TV Safe Area (Title & Action Safe Boundary) */
 .tv-board-grid {
   width: 100vw;
   height: 100vh;
-  padding: 1.2vh 1.2vw;
+  padding: 3.5vh 3.5vw;
   display: flex;
-  gap: 0.9vw; /* Reduced column separation space for maximum horizontal layout room */
+  gap: 1.2vw;
+  overflow: hidden;
 }
 
 /* Equal Columns Flex Container */
@@ -45,10 +48,12 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   height: 100%;
-  padding-right: 0.4vw; /* Reduced padding between columns */
+  padding-right: 0.5vw;
   border-right: 1px solid rgba(158, 201, 86, 0.2);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .tv-column:last-child {
@@ -61,7 +66,7 @@ html, body {
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-bottom: 1vh;
+  margin-bottom: calc(0.8vh * var(--scale-factor));
 }
 
 .category-block-auto:last-child {
@@ -73,10 +78,10 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.4vh;
-  padding-bottom: 0.25vh;
+  margin-bottom: calc(0.3vh * var(--scale-factor));
+  padding-bottom: calc(0.2vh * var(--scale-factor));
   border-bottom: 2px solid var(--logo-green);
-  font-size: clamp(0.9rem, 1.2vw, 1.45rem);
+  font-size: calc(clamp(0.85rem, 1.1vw, 1.3rem) * var(--scale-factor));
 }
 
 .cat-title-text {
@@ -84,19 +89,19 @@ html, body {
   font-weight: 900;
   color: var(--logo-green);
   text-transform: uppercase;
-  letter-spacing: 0.7px;
+  letter-spacing: 0.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   padding-right: 0.4vw;
 }
 
-/* Dynamic SVG sizing dynamically scaled 1.6em relative to Category Title Font Size */
+/* Dynamic SVG sizing dynamically scaled relative to Category Title Font Size */
 .cat-title-svg, .cat-animated-svg {
-  height: 1.6em !important;
-  width: 1.6em !important;
-  min-height: 1.6em !important;
-  min-width: 1.6em !important;
+  height: 1.4em !important;
+  width: 1.4em !important;
+  min-height: 1.4em !important;
+  min-width: 1.4em !important;
   flex-shrink: 0;
   margin-left: auto;
   display: block;
@@ -112,15 +117,16 @@ html, body {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: 0.3vh;
+  gap: calc(0.2vh * var(--scale-factor));
 }
 
 .item-row-clean {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.35vh 0;
+  padding: calc(0.25vh * var(--scale-factor)) 0;
   border-bottom: 1px solid var(--item-divider);
+  min-width: 0;
 }
 
 .item-row-clean:last-child {
@@ -129,20 +135,21 @@ html, body {
 
 .item-name-text {
   font-weight: 700;
-  font-size: clamp(0.78rem, 0.98vw, 1.2rem);
+  font-size: calc(clamp(0.72rem, 0.92vw, 1.1rem) * var(--scale-factor));
   color: var(--text-white);
-  line-height: 1.35;
+  line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding-right: 0.6vw;
+  padding-right: 0.5vw;
 }
 
 .item-price-text {
   font-weight: 900;
-  font-size: clamp(0.82rem, 1.08vw, 1.28rem);
+  font-size: calc(clamp(0.75rem, 0.98vw, 1.15rem) * var(--scale-factor));
   color: var(--logo-green);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Premium Big-Card Branch Selector Modal Overlay */

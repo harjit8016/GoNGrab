@@ -523,6 +523,25 @@ function renderTvBoard() {
   const numCols = isLandscape ? 5 : 3;
 
   const columnsData = packCategoriesIntoColumns(categoryGroups, numCols);
+
+  // Calculate maximum vertical weight across all columns for density auto-scaling
+  let maxColumnWeight = 0;
+  columnsData.forEach(colCats => {
+    let weight = 0;
+    colCats.forEach(cat => {
+      weight += 3 + cat.items.length;
+    });
+    if (weight > maxColumnWeight) maxColumnWeight = weight;
+  });
+
+  const BASELINE_WEIGHT = 20;
+  let scaleFactor = 1;
+  if (maxColumnWeight > BASELINE_WEIGHT) {
+    scaleFactor = Math.max(0.65, BASELINE_WEIGHT / maxColumnWeight);
+  }
+
+  document.documentElement.style.setProperty('--scale-factor', scaleFactor.toFixed(3));
+
   let boardHtml = '';
 
   columnsData.forEach(colCats => {
