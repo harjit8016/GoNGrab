@@ -512,15 +512,7 @@ function renderTvBoard() {
 
   const categoryGroups = {};
   menuData.forEach(item => {
-    let catName = item.categoryName || 'General';
-    if (window.liveCategoriesMap) {
-      const catKey = (item.categoryId || '').toLowerCase().trim();
-      const normName = (item.categoryName || '').toLowerCase().trim();
-      const catDoc = window.liveCategoriesMap[catKey] || window.liveCategoriesMap[normName];
-      if (catDoc && catDoc.name) {
-        catName = catDoc.name;
-      }
-    }
+    const catName = item.categoryName || 'General';
     if (!categoryGroups[catName]) {
       categoryGroups[catName] = [];
     }
@@ -531,25 +523,6 @@ function renderTvBoard() {
   const numCols = isLandscape ? 5 : 3;
 
   const columnsData = packCategoriesIntoColumns(categoryGroups, numCols);
-
-  // Calculate maximum vertical weight across all columns for density auto-scaling
-  let maxColumnWeight = 0;
-  columnsData.forEach(colCats => {
-    let weight = 0;
-    colCats.forEach(cat => {
-      weight += 3 + cat.items.length;
-    });
-    if (weight > maxColumnWeight) maxColumnWeight = weight;
-  });
-
-  const BASELINE_WEIGHT = 19;
-  let scaleFactor = 1.0;
-  if (maxColumnWeight > 0) {
-    scaleFactor = Math.min(1.55, Math.max(0.65, BASELINE_WEIGHT / maxColumnWeight));
-  }
-
-  document.documentElement.style.setProperty('--scale-factor', scaleFactor.toFixed(3));
-
   let boardHtml = '';
 
   columnsData.forEach(colCats => {

@@ -87,9 +87,4 @@ dependencies {
 
     // Firebase
     implementation(libs.gitlive.firebase.firestore)
-
-    // Native Vector & SVG Rendering Engine (Zero WebViews!)
-    implementation("io.coil-kt:coil-compose:2.6.0")
-    implementation("io.coil-kt:coil-svg:2.6.0")
-    implementation("com.airbnb.android:lottie-compose:6.4.0")
 }

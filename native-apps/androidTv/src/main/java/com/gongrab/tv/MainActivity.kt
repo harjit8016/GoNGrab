@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.initialize
 import dev.gitlive.firebase.FirebaseOptions
-import com.gongrab.menu.domain.repository.MenuRepository
 import com.gongrab.menu.data.repository.FirebaseMenuRepositoryImpl
 import com.gongrab.tv.ui.TvApp
 
@@ -31,22 +30,13 @@ class MainActivity : ComponentActivity() {
 
         // Remove hideSystemUI from here
 
-        val repository: MenuRepository = try {
-            val options = FirebaseOptions(
-                projectId = "grabngo-b5778",
-                applicationId = "1:123456789012:android:a1b2c3d4e5f6",
-                apiKey = "dummy-api-key"
-            )
-            try {
-                Firebase.initialize(this, options)
-            } catch (e: Exception) {
-                println("Firebase already initialized: ${e.message}")
-            }
-            FirebaseMenuRepositoryImpl()
-        } catch (e: Exception) {
-            println("Repository init notice: ${e.message}")
-            FirebaseMenuRepositoryImpl()
-        }
+        val options = FirebaseOptions(
+            projectId = "grabngo-b5778",
+            applicationId = "1:123456789012:android:a1b2c3d4e5f6", // Dummy required field
+            apiKey = "dummy-api-key" // Dummy required field
+        )
+        Firebase.initialize(this, options)
+        val repository = FirebaseMenuRepositoryImpl()
 
         setContent {
             TvApp(repository = repository)
