@@ -534,10 +534,10 @@ function renderTvBoard() {
     if (weight > maxColumnWeight) maxColumnWeight = weight;
   });
 
-  const BASELINE_WEIGHT = 20;
-  let scaleFactor = 1;
-  if (maxColumnWeight > BASELINE_WEIGHT) {
-    scaleFactor = Math.max(0.65, BASELINE_WEIGHT / maxColumnWeight);
+  const BASELINE_WEIGHT = 19;
+  let scaleFactor = 1.0;
+  if (maxColumnWeight > 0) {
+    scaleFactor = Math.min(1.55, Math.max(0.65, BASELINE_WEIGHT / maxColumnWeight));
   }
 
   document.documentElement.style.setProperty('--scale-factor', scaleFactor.toFixed(3));
