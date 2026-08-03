@@ -61,6 +61,23 @@ fun MobileAppScreen(repository: MenuRepository) {
 
     var showBranchDrawer by remember { mutableStateOf(false) }
 
+    var isSyncing by remember { mutableStateOf(false) }
+    var syncMessage by remember { mutableStateOf("Syncing live database...") }
+
+    val performSync: (String, suspend () -> Unit) -> Unit = { message, action ->
+        coroutineScope.launch {
+            syncMessage = message
+            isSyncing = true
+            try {
+                action()
+            } catch (e: Exception) {
+                println("Sync notice: ${e.message}")
+            } finally {
+                isSyncing = false
+            }
+        }
+    }
+
     // Resolve active branch name
     val currentBranchName = when (selectedBranchId) {
         "all" -> "🌐 All Branches"
@@ -207,31 +224,61 @@ fun MobileAppScreen(repository: MenuRepository) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when (activeTab) {
-                MobileNavTab.ITEMS -> MobileItemsView(
-                    items = items,
-                    categories = categories,
-                    branches = branches,
-                    selectedBranchId = selectedBranchId,
-                    selectedCategoryId = selectedCategoryId,
-                    searchQuery = searchQuery,
-                    animatedSvgPack = animatedSvgPack,
-                    onSelectCategory = { selectedCategoryId = it },
-                    repository = repository
-                )
+            if (categories.isEmpty() && items.isEmpty()) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxSize().padding(24.dp)
+                ) {
+                    CircularProgressIndicator(
+                        color = LeafGreen,
+                        strokeWidth = 4.dp,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Connecting to Live Firebase Database...",
+                        color = Color.White,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Loading branches, categories & menu items...",
+                        color = TextMuted,
+                        fontSize = 12.sp
+                    )
+                }
+            } else {
+                when (activeTab) {
+                    MobileNavTab.ITEMS -> MobileItemsView(
+                        items = items,
+                        categories = categories,
+                        branches = branches,
+                        selectedBranchId = selectedBranchId,
+                        selectedCategoryId = selectedCategoryId,
+                        searchQuery = searchQuery,
+                        animatedSvgPack = animatedSvgPack,
+                        onSelectCategory = { selectedCategoryId = it },
+                        performSync = performSync,
+                        repository = repository
+                    )
 
-                MobileNavTab.CATEGORIES -> MobileCategoriesView(
-                    categories = categories,
-                    searchQuery = searchQuery,
-                    animatedSvgPack = animatedSvgPack,
-                    repository = repository
-                )
+                    MobileNavTab.CATEGORIES -> MobileCategoriesView(
+                        categories = categories,
+                        searchQuery = searchQuery,
+                        animatedSvgPack = animatedSvgPack,
+                        performSync = performSync,
+                        repository = repository
+                    )
 
-                MobileNavTab.BRANCHES -> MobileBranchesView(
-                    branches = branches,
-                    searchQuery = searchQuery,
-                    repository = repository
-                )
+                    MobileNavTab.BRANCHES -> MobileBranchesView(
+                        branches = branches,
+                        searchQuery = searchQuery,
+                        performSync = performSync,
+                        repository = repository
+                    )
+                }
             }
         }
     }
@@ -246,6 +293,40 @@ fun MobileAppScreen(repository: MenuRepository) {
                 showBranchDrawer = false
             },
             onDismiss = { showBranchDrawer = false }
+        )
+    }
+
+    // Syncing Overlay Modal
+    if (isSyncing) {
+        AlertDialog(
+            onDismissRequest = {},
+            properties = androidx.compose.ui.window.DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+            containerColor = CardNavySurface,
+            shape = RoundedCornerShape(16.dp),
+            title = null,
+            text = {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = LeafGreen,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = syncMessage,
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            confirmButton = {}
         )
     }
 }
@@ -263,6 +344,7 @@ fun MobileItemsView(
     searchQuery: String,
     animatedSvgPack: List<AnimatedSvgItem>,
     onSelectCategory: (String?) -> Unit,
+    performSync: (String, suspend () -> Unit) -> Unit,
     repository: MenuRepository
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -420,7 +502,7 @@ fun MobileItemsView(
                                     Switch(
                                         checked = isAvailable,
                                         onCheckedChange = { available ->
-                                            coroutineScope.launch {
+                                            performSync("Updating item availability...") {
                                                 val updatedBranches = item.branches.toMutableMap()
                                                 val current = updatedBranches[selectedBranchId] ?: BranchPriceConfig(price = item.defaultPrice)
                                                 updatedBranches[selectedBranchId] = current.copy(available = available)
@@ -438,7 +520,11 @@ fun MobileItemsView(
                                     IconButton(onClick = { editingItem = item }) {
                                         Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color(0xFF38BDF8))
                                     }
-                                    IconButton(onClick = { coroutineScope.launch { repository.deleteMenuItem(item.id) } }) {
+                                    IconButton(onClick = {
+                                        performSync("Deleting item...") {
+                                            repository.deleteMenuItem(item.id)
+                                        }
+                                    }) {
                                         Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444))
                                     }
                                 }
@@ -460,7 +546,7 @@ fun MobileItemsView(
                 editingItem = null
             },
             onSave = { newItem ->
-                coroutineScope.launch {
+                performSync(if (editingItem != null) "Updating item..." else "Saving new item...") {
                     if (editingItem != null) repository.updateMenuItem(newItem) else repository.addMenuItem(newItem)
                     showAddItemSheet = false
                     editingItem = null
@@ -474,7 +560,7 @@ fun MobileItemsView(
             selectedAnimatedSvg = "",
             dbAnimatedSvgPack = animatedSvgPack,
             onAnimatedSvgSelected = { svgContent ->
-                coroutineScope.launch {
+                performSync("Saving animated SVG...") {
                     repository.saveAnimatedSvgToPack(
                         AnimatedSvgItem(
                             id = "svg_${kotlin.random.Random.nextLong(100000, 999999)}",
@@ -486,7 +572,7 @@ fun MobileItemsView(
                 }
             },
             onUploadToDbPack = { newItem ->
-                coroutineScope.launch { repository.saveAnimatedSvgToPack(newItem) }
+                performSync("Uploading SVG pack...") { repository.saveAnimatedSvgToPack(newItem) }
             },
             onDismiss = { showSvgPickerForItem = null }
         )
@@ -501,6 +587,7 @@ fun MobileCategoriesView(
     categories: List<Category>,
     searchQuery: String,
     animatedSvgPack: List<AnimatedSvgItem>,
+    performSync: (String, suspend () -> Unit) -> Unit,
     repository: MenuRepository
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -589,10 +676,20 @@ fun MobileCategoriesView(
             animatedSvgPack = animatedSvgPack,
             repository = repository,
             onDismiss = { showCategoryDialog = false },
+            onDelete = editingCategory?.let { cat ->
+                {
+                    performSync("Deleting category & reassigning items...") {
+                        repository.deleteCategory(cat.id)
+                        showCategoryDialog = false
+                        editingCategory = null
+                    }
+                }
+            },
             onSave = { category ->
-                coroutineScope.launch {
+                performSync(if (editingCategory == null) "Creating category..." else "Updating category & syncing items...") {
                     if (editingCategory == null) repository.addCategory(category) else repository.updateCategory(category)
                     showCategoryDialog = false
+                    editingCategory = null
                 }
             }
         )
@@ -603,13 +700,13 @@ fun MobileCategoriesView(
             selectedAnimatedSvg = cat.animatedSvg,
             dbAnimatedSvgPack = animatedSvgPack,
             onAnimatedSvgSelected = { newSvg ->
-                coroutineScope.launch {
+                performSync("Updating category SVG...") {
                     repository.updateCategory(cat.copy(animatedSvg = newSvg))
                     categoryForSvgPicker = null
                 }
             },
             onUploadToDbPack = { newItem ->
-                coroutineScope.launch { repository.saveAnimatedSvgToPack(newItem) }
+                performSync("Uploading SVG pack...") { repository.saveAnimatedSvgToPack(newItem) }
             },
             onDismiss = { categoryForSvgPicker = null }
         )
@@ -623,6 +720,7 @@ fun MobileCategoriesView(
 fun MobileBranchesView(
     branches: List<Branch>,
     searchQuery: String,
+    performSync: (String, suspend () -> Unit) -> Unit,
     repository: MenuRepository
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -696,7 +794,11 @@ fun MobileBranchesView(
                                 TextButton(onClick = { editingBranch = branch; showBranchDialog = true }) {
                                     Text("Edit", color = Color.White)
                                 }
-                                TextButton(onClick = { coroutineScope.launch { repository.deleteBranch(branch.id) } }) {
+                                TextButton(onClick = {
+                                    performSync("Deleting branch & cleaning items...") {
+                                        repository.deleteBranch(branch.id)
+                                    }
+                                }) {
                                     Text("Delete", color = Color(0xFFEF4444))
                                 }
                             }
@@ -713,9 +815,10 @@ fun MobileBranchesView(
             existingBranches = branches,
             onDismiss = { showBranchDialog = false },
             onSave = { branch ->
-                coroutineScope.launch {
+                performSync(if (editingBranch == null) "Creating branch..." else "Updating branch...") {
                     if (editingBranch == null) repository.addBranch(branch) else repository.updateBranch(branch)
                     showBranchDialog = false
+                    editingBranch = null
                 }
             }
         )
@@ -727,9 +830,10 @@ fun MobileBranchesView(
             existingBranches = branches,
             onDismiss = { showDuplicateDialog = false },
             onDuplicate = { newBranch ->
-                coroutineScope.launch {
+                performSync("Duplicating branch & copying price configs...") {
                     repository.duplicateBranch(sourceBranchToCopy!!.id, newBranch)
                     showDuplicateDialog = false
+                    sourceBranchToCopy = null
                 }
             }
         )
