@@ -514,7 +514,15 @@ function renderTvBoard() {
 
   const categoryGroups = {};
   menuData.forEach(item => {
-    const catName = item.categoryName || 'General';
+    let catName = item.categoryName || 'General';
+    if (window.liveCategoriesMap) {
+      const catKey = (item.categoryId || '').toLowerCase().trim();
+      const normName = (item.categoryName || '').toLowerCase().trim();
+      const catDoc = window.liveCategoriesMap[catKey] || window.liveCategoriesMap[normName];
+      if (catDoc && catDoc.name) {
+        catName = catDoc.name;
+      }
+    }
     if (!categoryGroups[catName]) {
       categoryGroups[catName] = [];
     }
