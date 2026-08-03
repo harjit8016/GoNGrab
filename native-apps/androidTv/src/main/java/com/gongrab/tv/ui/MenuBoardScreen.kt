@@ -14,14 +14,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Text
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.graphicsLayer
+import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
 import com.gongrab.menu.domain.model.Branch
 import com.gongrab.menu.domain.model.MenuItem
 import com.gongrab.menu.domain.repository.MenuRepository
@@ -148,28 +154,30 @@ fun MenuBoardScreen(
                         verticalArrangement = Arrangement.SpaceBetween // Evenly fills 100% of TV screen height from top edge to bottom edge!
                     ) {
                         columnCats.forEach { group ->
-                            // Find category database object for this group
-                            val dbCategory = categories.find { 
-                                it.name.equals(group.categoryName, ignoreCase = true) || 
-                                it.id.equals(group.categoryName, ignoreCase = true) 
-                            }
-                            val categoryAnimatedSvg = dbCategory?.animatedSvg ?: ""
-                            
-                            // Resolve SVG content (checking items first, then categories, then local presets)
-                            val finalSvg = resolveCategorySvg(group.categoryName, group.items, categoryAnimatedSvg)
-                            println("DEBUG_SIGNAGE: categoryName = ${group.categoryName}, finalSvgLength = ${finalSvg.length}, startsWithSvg = ${finalSvg.startsWith("<svg")}")
-                            
-                            val catWeight = group.items.size.toFloat() + 2.0f
+                            key(group.categoryName) {
+                                // Find category database object for this group
+                                val dbCategory = categories.find { 
+                                    it.name.equals(group.categoryName, ignoreCase = true) || 
+                                    it.id.equals(group.categoryName, ignoreCase = true) 
+                                }
+                                val categoryAnimatedSvg = dbCategory?.animatedSvg ?: ""
+                                
+                                // Resolve SVG content (checking items first, then categories, then local presets)
+                                val finalSvg = resolveCategorySvg(group.categoryName, group.items, categoryAnimatedSvg)
+                                println("DEBUG_SIGNAGE: categoryName = ${group.categoryName}, finalSvgLength = ${finalSvg.length}, startsWithSvg = ${finalSvg.startsWith("<svg")}")
+                                
+                                val catWeight = group.items.size.toFloat() + 2.0f
 
-                            CategorySignageBlock(
-                                categoryName = group.categoryName,
-                                items = group.items,
-                                branchId = branch.id,
-                                LogoGreen = LogoGreen,
-                                isLandscape = isLandscape,
-                                customSvg = finalSvg,
-                                modifier = Modifier.weight(catWeight, fill = false) // Fills allocated vertical room cleanly!
-                            )
+                                CategorySignageBlock(
+                                    categoryName = group.categoryName,
+                                    items = group.items,
+                                    branchId = branch.id,
+                                    LogoGreen = LogoGreen,
+                                    isLandscape = isLandscape,
+                                    customSvg = finalSvg,
+                                    modifier = Modifier.weight(catWeight, fill = false) // Fills allocated vertical room cleanly!
+                                )
+                            }
                         }
                     }
                     if (colIdx < columns.lastIndex) {
@@ -221,7 +229,7 @@ fun CategorySignageBlock(
                 letterSpacing = 0.5.sp
             )
 
-            // Dynamic Animated SVG WebView (Sized to header line height)
+            // Dynamic Animated SVG View executing internal CSS @keyframes (Pizza tilt, steam rise, leaf sway, bubbles)
             if (customSvg.isNotBlank() && customSvg.contains("<svg")) {
                 AnimatedSvgView(
                     svgContent = customSvg,
@@ -245,38 +253,40 @@ fun CategorySignageBlock(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             items.forEachIndexed { index, item ->
-                val price = item.branches[branchId]?.price ?: item.defaultPrice
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 1.dp), // Comfortable line spacing
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = item.name,
-                            color = Color.White,
-                            fontSize = itemFontSize,
-                            lineHeight = (itemFontSize.value * 1.3).sp, // Explicit line-height prevents text slicing
-                            fontFamily = OutfitFontFamily,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            text = "₹${price.toInt()}",
-                            color = LogoGreen,
-                            fontSize = itemFontSize,
-                            lineHeight = (itemFontSize.value * 1.3).sp,
-                            fontFamily = OutfitFontFamily,
-                            fontWeight = FontWeight.Black
-                        )
-                    }
-                    if (index < items.lastIndex) {
-                        HorizontalDivider(
-                            color = Color.White.copy(alpha = 0.08f), // --item-divider from tv.css
-                            thickness = 0.5.dp
-                        )
+                key(item.id) {
+                    val price = item.branches[branchId]?.price ?: item.defaultPrice
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 1.dp), // Comfortable line spacing
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = item.name,
+                                color = Color.White,
+                                fontSize = itemFontSize,
+                                lineHeight = (itemFontSize.value * 1.3).sp, // Explicit line-height prevents text slicing
+                                fontFamily = OutfitFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = "₹${price.toInt()}",
+                                color = LogoGreen,
+                                fontSize = itemFontSize,
+                                lineHeight = (itemFontSize.value * 1.3).sp,
+                                fontFamily = OutfitFontFamily,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                        if (index < items.lastIndex) {
+                            HorizontalDivider(
+                                color = Color.White.copy(alpha = 0.08f), // --item-divider from tv.css
+                                thickness = 0.5.dp
+                            )
+                        }
                     }
                 }
             }
@@ -284,6 +294,10 @@ fun CategorySignageBlock(
     }
 }
 
+/**
+ * Hardware-Accelerated Animated SVG View executing internal CSS @keyframes animations
+ * (Pizza tilt, leaf sway, steam rise, cherry dip, straw wiggle) at 60 FPS on GPU.
+ */
 @Composable
 fun AnimatedSvgView(
     svgContent: String,
@@ -297,7 +311,7 @@ fun AnimatedSvgView(
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null) // Hardware acceleration for buttery smooth 60FPS GPU SVG animations
+                setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
                 isVerticalScrollBarEnabled = false
                 isHorizontalScrollBarEnabled = false
                 settings.apply {
@@ -305,64 +319,58 @@ fun AnimatedSvgView(
                     useWideViewPort = false
                     loadWithOverviewMode = false
                     textZoom = 100
+                    domStorageEnabled = true
                 }
                 webViewClient = WebViewClient()
-                webChromeClient = object : android.webkit.WebChromeClient() {
-                    override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
-                        println("DEBUG_WEBVIEW: ${consoleMessage?.message()}")
-                        return true
-                    }
-                }
+                resumeTimers()
+                onWindowFocusChanged(true)
             }
         },
         update = { webView ->
-            val cleanedSvg = svgContent
-                .replace(Regex("<rect\\s+[^>]*?(?:width=[\"'](?:100%|100|500|1000)[\"'])[^>]*?/?>", RegexOption.IGNORE_CASE)) { match ->
-                    if (match.value.contains("x=\"0\"") || match.value.contains("y=\"0\"") || match.value.contains("width=\"100%\"") || match.value.contains("width=\"100\"")) "" else match.value
-                }
+            webView.resumeTimers()
+            webView.onWindowFocusChanged(true)
+            webView.onResume()
 
             val html = """
-                <html style="margin: 0; padding: 0; background: transparent !important; overflow: visible; width: 100%; height: 100%;">
+                <!DOCTYPE html>
+                <html style="margin: 0; padding: 0; background: transparent !important; width: 100%; height: 100%;">
                 <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
                     <style>
-                        * { background: transparent !important; }
-                        svg, .cat-title-svg, .cat-animated-svg {
-                            width: 100%;
-                            height: 100%;
-                            display: block;
-                            background: transparent !important;
-                            border: none !important;
-                            outline: none !important;
-                            overflow: visible !important;
-                            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55));
-                        }
+                        * { background: transparent !important; margin: 0; padding: 0; }
+                        html, body { background: transparent !important; width: 100%; height: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+                        svg { width: 100% !important; height: 100% !important; display: block; background: transparent !important; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.55)); }
                     </style>
                 </head>
-                <body style="margin: 0; padding: 0; background: transparent !important; overflow: visible; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: transparent !important;">
-                        ${cleanedSvg.replace("<svg ", "<svg class=\"cat-title-svg cat-animated-svg\" style=\"background: transparent !important; overflow: visible;\" ")}
-                    </div>
+                <body>
+                    $svgContent
                 </body>
                 </html>
             """.trimIndent()
 
-            // Only load HTML if SVG content has changed to prevent reloading WebViews and freezing animations!
-            if (webView.tag != html) {
-                webView.tag = html
+            if (webView.tag != svgContent) {
+                webView.tag = svgContent
                 webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
             }
+        },
+        onRelease = { webView ->
+            try {
+                webView.stopLoading()
+                webView.loadUrl("about:blank")
+                webView.destroy()
+            } catch (e: Exception) {}
         },
         modifier = modifier
     )
 }
 
 fun resolveCategorySvg(categoryName: String, items: List<MenuItem>, categoryAnimatedSvg: String): String {
-    // 1. Try category's own animatedSvg first
+    // 1. Try category's own animatedSvg from Firestore first
     if (categoryAnimatedSvg.isNotBlank() && categoryAnimatedSvg.contains("<svg")) {
         return categoryAnimatedSvg
     }
 
-    // 2. Search items in the category for custom SVGs or iconKeys
+    // 2. Search items in category for custom SVGs or iconKeys
     val itemWithSvg = items.find { it.animatedSvg.isNotBlank() || it.iconKey.isNotBlank() }
     if (itemWithSvg != null) {
         val rawSvg = if (itemWithSvg.animatedSvg.isNotBlank()) itemWithSvg.animatedSvg else itemWithSvg.iconKey
@@ -370,14 +378,13 @@ fun resolveCategorySvg(categoryName: String, items: List<MenuItem>, categoryAnim
             if (rawSvg.contains("<svg")) {
                 return rawSvg
             } else {
-                // Treat as preset key
                 val preset = getPresetByKey(rawSvg)
                 if (preset.isNotBlank()) return preset
             }
         }
     }
 
-    // 3. Fallback: match category name against presets
+    // 3. Fallback to preset key
     return getPresetByKey(categoryName)
 }
 

@@ -138,8 +138,26 @@ fun MobileAppScreen(repository: MenuRepository) {
                         }
                     }
 
-                    IconButton(onClick = { isSearchExpanded = !isSearchExpanded }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search", tint = LeafGreen)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Button(
+                            onClick = {
+                                performSync("Refreshing TV Display & Syncing...") {
+                                    repository.reloadData()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = LeafGreen.copy(alpha = 0.18f), contentColor = LeafGreen),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, LeafGreen.copy(alpha = 0.6f)),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            shape = RoundedCornerShape(18.dp)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh TV", modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("📺 Refresh TV", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        IconButton(onClick = { isSearchExpanded = !isSearchExpanded }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search", tint = LeafGreen)
+                        }
                     }
                 }
 
