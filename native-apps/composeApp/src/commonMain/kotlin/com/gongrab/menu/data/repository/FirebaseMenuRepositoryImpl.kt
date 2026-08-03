@@ -96,20 +96,80 @@ class FirebaseMenuRepositoryImpl : MenuRepository {
         try { firestore.collection("branches").document(branch.id).set(branch) } catch (e: Exception) { println("Firestore updateBranch error: ${e.message}") }
     }
     override suspend fun deleteBranch(branchId: String) {
-        try { firestore.collection("branches").document(branchId).delete() } catch (e: Exception) { println("Firestore deleteBranch error: ${e.message}") }
+        try {
+            println("Firestore deleteBranch: $branchId")
+            firestore.collection("branches").document(branchId).delete()
+
+            _items.value.filter { it.branches.containsKey(branchId) }.forEach { item ->
+                val updatedBranches = item.branches.filterKeys { it != branchId }
+                val updatedItem = item.copy(branches = updatedBranches)
+                firestore.collection("items").document(item.id).set(updatedItem)
+            }
+        } catch (e: Exception) {
+            println("Firestore deleteBranch error [$branchId]: ${e.message}")
+        }
     }
     override suspend fun duplicateBranch(sourceBranchId: String, newBranch: Branch) {
-        try { firestore.collection("branches").document(newBranch.id).set(newBranch) } catch (e: Exception) { println("Firestore duplicateBranch error: ${e.message}") }
+        try {
+            println("Firestore duplicateBranch: $sourceBranchId -> ${newBranch.id}")
+            firestore.collection("branches").document(newBranch.id).set(newBranch)
+
+            _items.value.forEach { item ->
+                val sourceConfig = item.branches[sourceBranchId]
+                if (sourceConfig != null) {
+                    val updatedBranches = item.branches.toMutableMap()
+                    updatedBranches[newBranch.id] = sourceConfig.copy()
+                    val updatedItem = item.copy(branches = updatedBranches)
+                    firestore.collection("items").document(item.id).set(updatedItem)
+                }
+            }
+        } catch (e: Exception) {
+            println("Firestore duplicateBranch error: ${e.message}")
+        }
     }
 
     override suspend fun addCategory(category: Category) {
-        try { firestore.collection("categories").document(category.id).set(category) } catch (e: Exception) { println("Firestore addCategory error: ${e.message}") }
+        val docId = category.id.ifBlank { category.name.trim().lowercase().replace(" ", "_").ifBlank { "cat_${kotlin.random.Random.nextLong(100000, 999999)}" } }
+        val toSave = category.copy(id = docId, name = category.name.trim())
+        try {
+            println("Firestore addCategory: $docId -> ${toSave.name}")
+            firestore.collection("categories").document(docId).set(toSave)
+        } catch (e: Exception) {
+            println("Firestore addCategory error: ${e.message}")
+        }
     }
     override suspend fun updateCategory(category: Category) {
-        try { firestore.collection("categories").document(category.id).set(category) } catch (e: Exception) { println("Firestore updateCategory error: ${e.message}") }
+        if (category.id.isBlank()) return
+        try {
+            println("Firestore updateCategory: ${category.id} -> ${category.name}")
+            firestore.collection("categories").document(category.id).set(category)
+
+            // Cascading sync: Update categoryName on all items belonging to this category
+            val itemsToUpdate = _items.value.filter {
+                it.categoryId == category.id || it.categoryName.equals(category.id, ignoreCase = true)
+            }
+            itemsToUpdate.forEach { item ->
+                val updatedItem = item.copy(categoryId = category.id, categoryName = category.name)
+                firestore.collection("items").document(item.id).set(updatedItem)
+                println("Cascading categoryName update for item ${item.id} -> ${category.name}")
+            }
+        } catch (e: Exception) {
+            println("Firestore updateCategory error [${category.id}]: ${e.message}")
+        }
     }
     override suspend fun deleteCategory(categoryId: String) {
-        try { firestore.collection("categories").document(categoryId).delete() } catch (e: Exception) { println("Firestore deleteCategory error: ${e.message}") }
+        try {
+            println("Firestore deleteCategory: $categoryId")
+            firestore.collection("categories").document(categoryId).delete()
+
+            val itemsToReassign = _items.value.filter { it.categoryId == categoryId }
+            itemsToReassign.forEach { item ->
+                val updatedItem = item.copy(categoryId = "general", categoryName = "General")
+                firestore.collection("items").document(item.id).set(updatedItem)
+            }
+        } catch (e: Exception) {
+            println("Firestore deleteCategory error [$categoryId]: ${e.message}")
+        }
     }
 
     override suspend fun addMenuItem(item: MenuItem) {
@@ -132,7 +192,12 @@ class FirebaseMenuRepositoryImpl : MenuRepository {
         }
     }
     override suspend fun deleteMenuItem(itemId: String) {
-        try { firestore.collection("items").document(itemId).delete() } catch (e: Exception) { println("Firestore deleteMenuItem error: ${e.message}") }
+        try {
+            println("Firestore deleteMenuItem doc: $itemId")
+            firestore.collection("items").document(itemId).delete()
+        } catch (e: Exception) {
+            println("Firestore deleteMenuItem error [$itemId]: ${e.message}")
+        }
     }
 
     override suspend fun saveAnimatedSvgToPack(item: AnimatedSvgItem) {
