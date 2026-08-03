@@ -173,28 +173,51 @@ class FirebaseMenuRepositoryImpl : MenuRepository {
     }
 
     override suspend fun addMenuItem(item: MenuItem) {
-        val docId = item.id.ifBlank { "item_${kotlin.random.Random.nextLong(100000, 999999)}" }
-        val toSave = item.copy(id = docId)
+        val cleanSlug = item.name.trim().lowercase().replace(Regex("[^a-z0-9_]"), "_").trim('_')
+        val docId = if (item.id.isNotBlank() && !item.id.startsWith("item_") && item.id.length > 3) {
+            item.id
+        } else if (cleanSlug.isNotBlank()) {
+            "item_$cleanSlug"
+        } else {
+            "item_${kotlin.random.Random.nextLong(100000, 999999)}"
+        }
+        val toSave = item.copy(id = docId, name = item.name.trim())
+
+        // Optimistic state update for instant UI feedback
+        _items.value = (_items.value.filter { it.id != docId } + toSave).sortedBy { it.displayOrder }
+
         try {
-            println("Firestore addMenuItem doc: $docId")
+            println("Firestore addMenuItem doc: $docId -> ${toSave.name}")
             firestore.collection("items").document(docId).set(toSave)
+            println("✓ Successfully saved new item $docId to Firestore")
         } catch (e: Exception) {
-            println("Firestore addMenuItem error: ${e.message}")
+            println("Firestore addMenuItem error [$docId]: ${e.message}")
         }
     }
     override suspend fun updateMenuItem(item: MenuItem) {
         if (item.id.isBlank()) return
+
+        // Optimistic state update for instant UI feedback
+        _items.value = _items.value.map { if (it.id == item.id) item else it }.sortedBy { it.displayOrder }
+
         try {
-            println("Firestore updateMenuItem doc: ${item.id} -> ${item.branches}")
+            println("Firestore updateMenuItem doc: ${item.id} -> ${item.name} -> ${item.branches}")
             firestore.collection("items").document(item.id).set(item)
+            println("✓ Successfully updated item ${item.id} in Firestore")
         } catch (e: Exception) {
             println("Firestore updateMenuItem error [${item.id}]: ${e.message}")
         }
     }
     override suspend fun deleteMenuItem(itemId: String) {
+        if (itemId.isBlank()) return
+
+        // Optimistic state update for instant UI feedback
+        _items.value = _items.value.filter { it.id != itemId }
+
         try {
             println("Firestore deleteMenuItem doc: $itemId")
             firestore.collection("items").document(itemId).delete()
+            println("✓ Successfully deleted item $itemId from Firestore")
         } catch (e: Exception) {
             println("Firestore deleteMenuItem error [$itemId]: ${e.message}")
         }

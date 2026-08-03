@@ -891,9 +891,10 @@ fun MobileItemDialog(
     onSave: (MenuItem) -> Unit
 ) {
     var name by remember { mutableStateOf(item?.name ?: "") }
-    var defaultPriceText by remember { mutableStateOf(item?.defaultPrice?.toString() ?: "") }
+    var defaultPriceText by remember { mutableStateOf(item?.defaultPrice?.let { if (it > 0) it.toString() else "" } ?: "") }
     var selectedCategory by remember { mutableStateOf(categories.find { it.id == item?.categoryId } ?: categories.firstOrNull()) }
     var expandedCat by remember { mutableStateOf(false) }
+    var nameError by remember { mutableStateOf<String?>(null) }
 
     // Multi-branch price entries
     val branchPricesMap = remember {
@@ -918,11 +919,18 @@ fun MobileItemDialog(
             ) {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Item Name", color = TextMuted) },
+                    onValueChange = {
+                        name = it
+                        if (it.isNotBlank()) nameError = null
+                    },
+                    label = { Text("Item Name *", color = TextMuted) },
+                    isError = nameError != null,
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = LeafGreen, unfocusedBorderColor = BorderGreen, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
                 )
+                if (nameError != null) {
+                    Text(nameError!!, color = Color(0xFFEF4444), fontSize = 11.sp)
+                }
 
                 OutlinedTextField(
                     value = defaultPriceText,
@@ -968,6 +976,10 @@ fun MobileItemDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    if (name.trim().isBlank()) {
+                        nameError = "Item name is required"
+                        return@Button
+                    }
                     val basePrice = defaultPriceText.toDoubleOrNull() ?: 0.0
                     val catId = selectedCategory?.id ?: "general"
                     val catName = selectedCategory?.name ?: "General"
@@ -979,20 +991,26 @@ fun MobileItemDialog(
                         updatedBranches[b.id] = BranchPriceConfig(price = bPrice, available = currentAvail)
                     }
 
-                    val newItem = (item ?: MenuItem(
-                        id = "item_${kotlin.random.Random.nextLong(100000, 999999)}",
-                        name = name,
-                        categoryId = catId,
-                        categoryName = catName,
-                        defaultPrice = basePrice,
-                        branches = updatedBranches
-                    )).copy(
-                        name = name,
-                        categoryId = catId,
-                        categoryName = catName,
-                        defaultPrice = basePrice,
-                        branches = updatedBranches
-                    )
+                    val newItem = if (item != null) {
+                        item.copy(
+                            name = name.trim(),
+                            categoryId = catId,
+                            categoryName = catName,
+                            defaultPrice = basePrice,
+                            branches = updatedBranches
+                        )
+                    } else {
+                        val cleanSlug = name.trim().lowercase().replace(Regex("[^a-z0-9_]"), "_").trim('_')
+                        val newId = if (cleanSlug.isNotBlank()) "item_$cleanSlug" else "item_${kotlin.random.Random.nextLong(100000, 999999)}"
+                        MenuItem(
+                            id = newId,
+                            name = name.trim(),
+                            categoryId = catId,
+                            categoryName = catName,
+                            defaultPrice = basePrice,
+                            branches = updatedBranches
+                        )
+                    }
 
                     onSave(newItem)
                 },
