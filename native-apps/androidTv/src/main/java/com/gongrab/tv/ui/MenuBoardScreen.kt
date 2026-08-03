@@ -99,9 +99,15 @@ fun MenuBoardScreen(
         branchConfig == null || branchConfig.available
     }
 
-    // Group items by categoryName (exactly like tv.js!)
+    // Group items by resolving live category name from categories collection
     val categoryGroups = branchItems
-        .groupBy { if (it.categoryName.isNotBlank()) it.categoryName else "General" }
+        .groupBy { item ->
+            val dbCategory = categories.find { 
+                (item.categoryId.isNotBlank() && it.id.equals(item.categoryId, ignoreCase = true)) || 
+                (item.categoryName.isNotBlank() && it.name.equals(item.categoryName, ignoreCase = true)) 
+            }
+            dbCategory?.name ?: if (item.categoryName.isNotBlank()) item.categoryName else "General"
+        }
         .map { (catName, itemsInCat) ->
             CategoryGroup(
                 categoryName = catName,
