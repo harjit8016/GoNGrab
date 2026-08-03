@@ -297,13 +297,13 @@ fun AnimatedSvgView(
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
+                setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null) // Hardware acceleration for buttery smooth 60FPS GPU SVG animations
                 isVerticalScrollBarEnabled = false
                 isHorizontalScrollBarEnabled = false
                 settings.apply {
                     javaScriptEnabled = true
-                    useWideViewPort = false // Fix: disable wide viewport for exact layout size
-                    loadWithOverviewMode = false // Fix: disable overview scale to fit
+                    useWideViewPort = false
+                    loadWithOverviewMode = false
                     textZoom = 100
                 }
                 webViewClient = WebViewClient()
@@ -345,7 +345,12 @@ fun AnimatedSvgView(
                 </body>
                 </html>
             """.trimIndent()
-            webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
+
+            // Only load HTML if SVG content has changed to prevent reloading WebViews and freezing animations!
+            if (webView.tag != html) {
+                webView.tag = html
+                webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
+            }
         },
         modifier = modifier
     )
