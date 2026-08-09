@@ -6,6 +6,7 @@ import android.content.res.Configuration
 import android.view.ViewGroup
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -276,7 +277,9 @@ fun CategorySignageBlock(
 
             // Dynamic Animated SVG WebView (Sized to header line height)
             if (customSvg.isNotBlank() && customSvg.contains("<svg")) {
-                AnimatedSvgView(svgContent = customSvg, modifier = Modifier.size(dynamicSvgSize))
+                key(customSvg) {
+                    AnimatedSvgView(svgContent = customSvg, modifier = Modifier.size(dynamicSvgSize))
+                }
             }
         }
 
@@ -351,81 +354,111 @@ fun CategorySignageBlock(
 
 @Composable
 fun AnimatedSvgView(svgContent: String, modifier: Modifier = Modifier) {
+    if (svgContent.isBlank()) return
+
+    val cleanHtml = remember(svgContent) {
+        if (!svgContent.contains("<svg")) return@remember ""
+        val cleanedSvg = svgContent.replace(
+                Regex(
+                        "<rect\\s+[^>]*?(?:width=[\"'](?:100%|100|500|1000)[\"'])[^>]*?/?>",
+                        RegexOption.IGNORE_CASE
+                )
+        ) { match ->
+            if (match.value.contains("x=\"0\"") ||
+                            match.value.contains("y=\"0\"") ||
+                            match.value.contains("width=\"100%\"") ||
+                            match.value.contains("width=\"100\"")
+            )
+                    ""
+            else match.value
+        }
+
+        """
+        <!DOCTYPE html>
+        <html style="margin: 0; padding: 0; background: transparent !important; overflow: hidden; width: 100%; height: 100%;">
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; background: transparent !important; }
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    background: transparent !important;
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    overflow: hidden;
+                }
+                svg, .cat-title-svg, .cat-animated-svg {
+                    width: 100%;
+                    height: 100%;
+                    display: block;
+                    background: transparent !important;
+                    border: none !important;
+                    outline: none !important;
+                    overflow: visible !important;
+                    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55));
+                }
+            </style>
+        </head>
+        <body style="background: transparent !important; overflow: hidden;">
+            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: transparent !important;">
+                ${cleanedSvg.replace("<svg ", "<svg class=\"cat-title-svg cat-animated-svg\" style=\"background: transparent !important; overflow: visible;\" ")}
+            </div>
+        </body>
+        </html>
+        """.trimIndent()
+    }
+
+    if (cleanHtml.isBlank()) return
+
     AndroidView(
+            modifier = modifier,
             factory = { context ->
-                WebView(context).apply {
-                    layoutParams =
-                            ViewGroup.LayoutParams(
-                                    ViewGroup.LayoutParams.MATCH_PARENT,
-                                    ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
-                    isVerticalScrollBarEnabled = false
-                    isHorizontalScrollBarEnabled = false
-                    settings.apply {
-                        javaScriptEnabled = true
-                        useWideViewPort = false // Fix: disable wide viewport for exact layout size
-                        loadWithOverviewMode = false // Fix: disable overview scale to fit
-                        textZoom = 100
+                FrameLayout(context).apply {
+                    layoutParams = ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    val webView = WebView(context).apply {
+                        layoutParams = FrameLayout.LayoutParams(
+                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                FrameLayout.LayoutParams.MATCH_PARENT
+                        )
+                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+                        isVerticalScrollBarEnabled = false
+                        isHorizontalScrollBarEnabled = false
+                        settings.apply {
+                            javaScriptEnabled = true
+                            domStorageEnabled = true
+                            useWideViewPort = false
+                            loadWithOverviewMode = false
+                            textZoom = 100
+                        }
+                        webViewClient = WebViewClient()
+                        loadDataWithBaseURL(null, cleanHtml, "text/html", "utf-8", null)
                     }
-                    webViewClient = WebViewClient()
-                    webChromeClient =
-                            object : android.webkit.WebChromeClient() {
-                                override fun onConsoleMessage(
-                                        consoleMessage: android.webkit.ConsoleMessage?
-                                ): Boolean {
-                                    println("DEBUG_WEBVIEW: ${consoleMessage?.message()}")
-                                    return true
-                                }
-                            }
+                    addView(webView)
                 }
             },
-            update = { webView ->
-                val cleanedSvg =
-                        svgContent.replace(
-                                Regex(
-                                        "<rect\\s+[^>]*?(?:width=[\"'](?:100%|100|500|1000)[\"'])[^>]*?/?>",
-                                        RegexOption.IGNORE_CASE
-                                )
-                        ) { match ->
-                            if (match.value.contains("x=\"0\"") ||
-                                            match.value.contains("y=\"0\"") ||
-                                            match.value.contains("width=\"100%\"") ||
-                                            match.value.contains("width=\"100\"")
-                            )
-                                    ""
-                            else match.value
-                        }
-
-                val html =
-                        """
-                <html style="margin: 0; padding: 0; background: transparent !important; overflow: visible; width: 100%; height: 100%;">
-                <head>
-                    <style>
-                        * { background: transparent !important; }
-                        svg, .cat-title-svg, .cat-animated-svg {
-                            width: 100%;
-                            height: 100%;
-                            display: block;
-                            background: transparent !important;
-                            border: none !important;
-                            outline: none !important;
-                            overflow: visible !important;
-                            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55));
-                        }
-                    </style>
-                </head>
-                <body style="margin: 0; padding: 0; background: transparent !important; overflow: visible; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: transparent !important;">
-                        ${cleanedSvg.replace("<svg ", "<svg class=\"cat-title-svg cat-animated-svg\" style=\"background: transparent !important; overflow: visible;\" ")}
-                    </div>
-                </body>
-                </html>
-            """.trimIndent()
-                webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null)
+            update = {
+                // Empty update lambda prevents re-triggering loadDataWithBaseURL during recomposition
             },
-            modifier = modifier
+            onRelease = { container ->
+                val webView = container.getChildAt(0) as? WebView
+                webView?.apply {
+                    stopLoading()
+                    loadUrl("about:blank")
+                    webChromeClient = null
+                    clearHistory()
+                    removeAllViews()
+                    destroy()
+                }
+                container.removeAllViews()
+            }
     )
 }
 
