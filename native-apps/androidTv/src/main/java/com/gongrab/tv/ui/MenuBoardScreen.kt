@@ -230,6 +230,19 @@ fun CategorySignageBlock(
                 LayoutMetrics(titleFs, itemFs, itemPad, headerPad, 1.4f)
             }
 
+    // Dynamically scale up font size for categories with extra vertical space (fewer items)
+    val categoryItemFs =
+            remember(metrics.itemFontSize, items.size) {
+                val boostFactor =
+                        when {
+                            items.size <= 2 -> 1.35f
+                            items.size <= 4 -> 1.20f
+                            items.size <= 6 -> 1.10f
+                            else -> 1.0f
+                        }
+                (metrics.itemFontSize.value * boostFactor).coerceAtMost(24f).sp
+            }
+
     val dynamicSvgSize = (metrics.titleFontSize.value * metrics.svgScale).dp
 
     Column(modifier = modifier.fillMaxWidth()) {
@@ -296,11 +309,11 @@ fun CategorySignageBlock(
                                     color = Color.White,
                                     fontFamily = OutfitFontFamily,
                                     fontWeight = FontWeight.Bold,
-                                    lineHeight = (metrics.itemFontSize.value * 1.2).sp
+                                    lineHeight = (categoryItemFs.value * 1.2).sp
                                 ),
                                 autoSize = TextAutoSize.StepBased(
                                     minFontSize = 8.sp,
-                                    maxFontSize = metrics.itemFontSize,
+                                    maxFontSize = categoryItemFs,
                                     stepSize = 1.sp
                                 ),
                                 maxLines = 2,
@@ -317,7 +330,7 @@ fun CategorySignageBlock(
                                 ),
                                 autoSize = TextAutoSize.StepBased(
                                     minFontSize = 8.sp,
-                                    maxFontSize = metrics.itemFontSize,
+                                    maxFontSize = categoryItemFs,
                                     stepSize = 1.sp
                                 ),
                                 maxLines = 1
