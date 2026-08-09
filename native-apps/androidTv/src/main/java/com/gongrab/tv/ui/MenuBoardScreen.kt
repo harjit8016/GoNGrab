@@ -213,27 +213,21 @@ fun CategorySignageBlock(
         totalItemsInColumn: Int,
         modifier: Modifier = Modifier
 ) {
-    // Dynamic styling based on total items in this column to prevent vertical clipping/overflow
+    val configuration = LocalConfiguration.current
+    val screenHeightDp = configuration.screenHeightDp
+
+    // Continuously computed dynamic metrics without hardcoded count thresholds
     val metrics =
-            remember(totalItemsInColumn, isLandscape) {
-                if (!isLandscape) {
-                    // Portrait mode (3 columns - typically more items per column)
-                    when {
-                        totalItemsInColumn > 28 -> LayoutMetrics(14.sp, 10.sp, 1.dp, 2.dp, 1.4f)
-                        totalItemsInColumn > 22 -> LayoutMetrics(16.sp, 12.sp, 2.dp, 4.dp, 1.4f)
-                        totalItemsInColumn > 16 -> LayoutMetrics(20.sp, 15.sp, 4.dp, 6.dp, 1.5f)
-                        else -> LayoutMetrics(24.sp, 18.sp, 6.dp, 8.dp, 1.6f)
-                    }
-                } else {
-                    // Landscape mode (5 columns - typically fewer items per column)
-                    when {
-                        totalItemsInColumn > 22 -> LayoutMetrics(14.sp, 10.sp, 1.dp, 2.dp, 1.3f)
-                        totalItemsInColumn > 18 -> LayoutMetrics(16.sp, 12.sp, 2.dp, 4.dp, 1.4f)
-                        totalItemsInColumn > 13 -> LayoutMetrics(19.sp, 14.sp, 4.dp, 6.dp, 1.5f)
-                        totalItemsInColumn > 8  -> LayoutMetrics(24.sp, 18.sp, 6.dp, 8.dp, 1.6f)
-                        else                    -> LayoutMetrics(28.sp, 22.sp, 8.dp, 10.dp, 1.6f)
-                    }
-                }
+            remember(totalItemsInColumn, isLandscape, screenHeightDp) {
+                val safeCount = if (totalItemsInColumn < 1) 1 else totalItemsInColumn
+                val baseItemHeightDp = (screenHeightDp * (if (isLandscape) 0.65f else 0.75f)) / safeCount
+
+                val itemFs = (baseItemHeightDp * 0.38f).coerceIn(9f, 22f).sp
+                val titleFs = (baseItemHeightDp * 0.55f).coerceIn(13f, 28f).sp
+                val itemPad = (baseItemHeightDp * 0.05f).coerceIn(1f, 6f).dp
+                val headerPad = (baseItemHeightDp * 0.08f).coerceIn(2f, 8f).dp
+
+                LayoutMetrics(titleFs, itemFs, itemPad, headerPad, 1.4f)
             }
 
     val dynamicSvgSize = (metrics.titleFontSize.value * metrics.svgScale).dp
@@ -255,7 +249,7 @@ fun CategorySignageBlock(
                         fontFamily = OutfitFontFamily,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 0.5.sp,
-                        lineHeight = (metrics.titleFontSize.value * 1.15).sp
+                        lineHeight = (metrics.titleFontSize.value * 1.18).sp
                     ),
                     autoSize = TextAutoSize.StepBased(
                         minFontSize = 12.sp,
@@ -280,7 +274,7 @@ fun CategorySignageBlock(
                 color = LogoGreen.copy(alpha = 0.85f)
         )
 
-        // Item Rows with auto-sizing and weighted layout to fill space perfectly
+        // Item Rows with dynamic vertical spacing - wrapContentHeight prevents letter clipping (e.g. p, g, y)!
         Column(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 verticalArrangement = Arrangement.SpaceBetween
@@ -288,11 +282,11 @@ fun CategorySignageBlock(
             items.forEachIndexed { index, item ->
                 val price = item.branches[branchId]?.price ?: item.defaultPrice
                 Column(
-                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    modifier = Modifier.fillMaxWidth().wrapContentHeight(),
                     verticalArrangement = Arrangement.Center
                 ) {
                     Row(
-                            modifier = Modifier.fillMaxWidth().weight(1f), // Enforce weight to bound height
+                            modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(vertical = metrics.itemVerticalPadding),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -302,11 +296,11 @@ fun CategorySignageBlock(
                                     color = Color.White,
                                     fontFamily = OutfitFontFamily,
                                     fontWeight = FontWeight.Bold,
-                                    lineHeight = (metrics.itemFontSize.value * 1.15).sp
+                                    lineHeight = (metrics.itemFontSize.value * 1.2).sp
                                 ),
                                 autoSize = TextAutoSize.StepBased(
                                     minFontSize = 8.sp,
-                                    maxFontSize = metrics.itemFontSize, // Safe dynamic maximum
+                                    maxFontSize = metrics.itemFontSize,
                                     stepSize = 1.sp
                                 ),
                                 maxLines = 2,
@@ -323,7 +317,7 @@ fun CategorySignageBlock(
                                 ),
                                 autoSize = TextAutoSize.StepBased(
                                     minFontSize = 8.sp,
-                                    maxFontSize = metrics.itemFontSize, // Align with item name
+                                    maxFontSize = metrics.itemFontSize,
                                     stepSize = 1.sp
                                 ),
                                 maxLines = 1
@@ -331,9 +325,9 @@ fun CategorySignageBlock(
                     }
                     if (index < items.lastIndex) {
                         HorizontalDivider(
-                                color = Color.White.copy(alpha = 0.08f), // --item-divider from tv.css
+                                color = Color.White.copy(alpha = 0.08f),
                                 thickness = 0.5.dp,
-                                modifier = Modifier.padding(top = 2.dp)
+                                modifier = Modifier.padding(top = 1.dp)
                         )
                     }
                 }
