@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "com.gongrab.tv"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.gongrab.tv"
         minSdk = 23
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
 
@@ -72,14 +72,15 @@ android {
 }
 
 dependencies {
+    implementation(platform(libs.google.firebase.bom))
     implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.compose)
-    implementation(compose.ui)
-    debugImplementation(compose.uiTooling)   // Only in debug builds
-    implementation(compose.foundation)
-    implementation(compose.material3)
-    implementation(compose.materialIconsExtended)
+    implementation(libs.compose.ui)
+    debugImplementation(libs.compose.ui.tooling)   // Only in debug builds
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
     implementation(libs.androidx.tv.foundation)
     implementation(libs.androidx.tv.material)
     implementation(libs.kotlinx.coroutines.core)

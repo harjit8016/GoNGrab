@@ -21,8 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.tv.foundation.lazy.list.TvLazyRow
-import androidx.tv.foundation.lazy.list.itemsIndexed
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.tv.material3.*
 import com.gongrab.menu.domain.model.Branch
 import com.gongrab.menu.domain.repository.MenuRepository
@@ -94,7 +94,7 @@ fun BranchSelectionScreen(
             )
         } else {
             // Horizontal scrolling row per TV Skill Guidelines
-            TvLazyRow(
+            LazyRow(
                 contentPadding = PaddingValues(horizontal = 58.dp, vertical = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(36.dp),
                 verticalAlignment = Alignment.CenterVertically,
