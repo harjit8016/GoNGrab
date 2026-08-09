@@ -439,13 +439,18 @@ fun AnimatedSvgView(svgContent: String, modifier: Modifier = Modifier) {
                             textZoom = 100
                         }
                         webViewClient = WebViewClient()
-                        loadDataWithBaseURL(null, cleanHtml, "text/html", "utf-8", null)
                     }
                     addView(webView)
                 }
             },
-            update = {
-                // Empty update lambda prevents re-triggering loadDataWithBaseURL during recomposition
+            update = { container ->
+                val webView = container.getChildAt(0) as? WebView
+                if (webView != null && cleanHtml.isNotBlank()) {
+                    if (webView.tag != cleanHtml) {
+                        webView.tag = cleanHtml
+                        webView.loadDataWithBaseURL(null, cleanHtml, "text/html", "utf-8", null)
+                    }
+                }
             },
             onRelease = { container ->
                 val webView = container.getChildAt(0) as? WebView
