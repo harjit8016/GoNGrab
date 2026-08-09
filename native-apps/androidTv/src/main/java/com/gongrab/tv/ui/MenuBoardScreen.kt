@@ -428,7 +428,7 @@ fun AnimatedSvgView(svgContent: String, modifier: Modifier = Modifier) {
                                 FrameLayout.LayoutParams.MATCH_PARENT
                         )
                         setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                        setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+                        setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
                         isVerticalScrollBarEnabled = false
                         isHorizontalScrollBarEnabled = false
                         settings.apply {
