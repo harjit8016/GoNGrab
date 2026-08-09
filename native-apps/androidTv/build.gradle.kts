@@ -17,9 +17,9 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        // Build for 64-bit (arm64-v8a) and 32-bit (armeabi-v7a) to support budget Smart TVs
+        // Build for 64-bit (arm64-v8a, x86_64) and 32-bit (armeabi-v7a, x86) to support all TVs and emulators
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
         }
     }
 
